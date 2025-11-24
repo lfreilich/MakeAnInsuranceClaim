@@ -60,10 +60,14 @@ export default function AdminDashboard() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [email, setEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
-  const [authStep, setAuthStep] = useState<"email" | "code">("email");
+  const [authStep, setAuthStep] = useState<"email" | "phone-register" | "code">("email");
   const [authError, setAuthError] = useState("");
   const [codeSentMessage, setCodeSentMessage] = useState("");
   const [user, setUser] = useState<{ email: string; role: string; claimAccess: number[] } | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [deliveryMethod, setDeliveryMethod] = useState<"email" | "sms">("email");
+  const [userHasPhone, setUserHasPhone] = useState(false);
+  const [requiresPhoneRegistration, setRequiresPhoneRegistration] = useState(false);
 
   const { data: claims = [], isLoading } = useQuery<Claim[]>({
     queryKey: ["/api/claims"],
@@ -114,12 +118,68 @@ export default function AdminDashboard() {
     },
   });
 
-  const requestCodeMutation = useMutation({
+  const checkUserMutation = useMutation({
     mutationFn: async (email: string) => {
-      const response = await fetch("/api/auth/request-code", {
+      const response = await fetch("/api/auth/check-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to check user");
+      }
+      return response.json();
+    },
+    onSuccess: (data: { hasPhone: boolean; requiresPhoneRegistration: boolean }) => {
+      setUserHasPhone(data.hasPhone);
+      setRequiresPhoneRegistration(data.requiresPhoneRegistration);
+      
+      // If staff without phone, prompt registration
+      if (data.requiresPhoneRegistration) {
+        setAuthStep("phone-register");
+      } else {
+        // Proceed to code request
+        setAuthStep("code");
+      }
+      setAuthError("");
+    },
+    onError: (error: Error) => {
+      setAuthError(error.message);
+    },
+  });
+
+  const registerPhoneMutation = useMutation({
+    mutationFn: async ({ email, phone }: { email: string; phone: string }) => {
+      const response = await fetch("/api/auth/register-phone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, phone }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to register phone");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      setUserHasPhone(true);
+      setRequiresPhoneRegistration(false);
+      setAuthError("");
+      // Proceed to code request
+      setAuthStep("code");
+    },
+    onError: (error: Error) => {
+      setAuthError(error.message);
+    },
+  });
+
+  const requestCodeMutation = useMutation({
+    mutationFn: async ({ email, deliveryMethod }: { email: string; deliveryMethod: "email" | "sms" }) => {
+      const response = await fetch("/api/auth/request-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, deliveryMethod }),
       });
       if (!response.ok) {
         const error = await response.json();
@@ -127,9 +187,8 @@ export default function AdminDashboard() {
       }
       return response.json();
     },
-    onSuccess: () => {
-      setAuthStep("code");
-      setCodeSentMessage("Verification code sent to your email");
+    onSuccess: (data) => {
+      setCodeSentMessage(data.message || "Verification code sent");
       setAuthError("");
     },
     onError: (error: Error) => {
@@ -161,11 +220,24 @@ export default function AdminDashboard() {
     },
   });
 
+  const handleCheckUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+    setCodeSentMessage("");
+    checkUserMutation.mutate(email);
+  };
+
+  const handleRegisterPhone = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+    registerPhoneMutation.mutate({ email, phone: phoneNumber });
+  };
+
   const handleRequestCode = (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError("");
     setCodeSentMessage("");
-    requestCodeMutation.mutate(email);
+    requestCodeMutation.mutate({ email, deliveryMethod });
   };
 
   const handleVerifyCode = (e: React.FormEvent) => {
@@ -263,14 +335,14 @@ export default function AdminDashboard() {
               Admin Access
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-2">
-              {authStep === "email" 
-                ? "Enter your email to receive a verification code" 
-                : "Enter the 6-digit code sent to your email"}
+              {authStep === "email" && "Enter your email to continue"}
+              {authStep === "phone-register" && "Register your phone number for SMS notifications"}
+              {authStep === "code" && "Choose how to receive your verification code"}
             </p>
           </CardHeader>
           <CardContent>
-            {authStep === "email" ? (
-              <form onSubmit={handleRequestCode} className="space-y-4">
+            {authStep === "email" && (
+              <form onSubmit={handleCheckUser} className="space-y-4">
                 <div>
                   <Input
                     type="email"
@@ -287,13 +359,113 @@ export default function AdminDashboard() {
                 <Button 
                   type="submit" 
                   className="w-full" 
-                  disabled={requestCodeMutation.isPending}
-                  data-testid="button-request-code"
+                  disabled={checkUserMutation.isPending}
+                  data-testid="button-continue"
                 >
-                  {requestCodeMutation.isPending ? "Sending..." : "Send Verification Code"}
+                  {checkUserMutation.isPending ? "Checking..." : "Continue"}
                 </Button>
               </form>
-            ) : (
+            )}
+
+            {authStep === "phone-register" && (
+              <form onSubmit={handleRegisterPhone} className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    As a staff member, please register your phone number to receive SMS notifications.
+                  </p>
+                  <Input
+                    type="tel"
+                    placeholder="Enter your phone number"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    required
+                    data-testid="input-phone"
+                  />
+                  {authError && (
+                    <p className="text-sm text-destructive mt-2">{authError}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={registerPhoneMutation.isPending}
+                    data-testid="button-register-phone"
+                  >
+                    {registerPhoneMutation.isPending ? "Registering..." : "Register Phone"}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    className="w-full"
+                    onClick={() => setAuthStep("email")}
+                    data-testid="button-back-to-email"
+                  >
+                    Back
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {authStep === "code" && !verificationCode && (
+              <form onSubmit={handleRequestCode} className="space-y-4">
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Receive code via:</label>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant={deliveryMethod === "email" ? "default" : "outline"}
+                      className="flex-1"
+                      onClick={() => setDeliveryMethod("email")}
+                      data-testid="button-delivery-email"
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Email
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={deliveryMethod === "sms" ? "default" : "outline"}
+                      className="flex-1"
+                      onClick={() => setDeliveryMethod("sms")}
+                      disabled={!userHasPhone}
+                      data-testid="button-delivery-sms"
+                    >
+                      <Phone className="h-4 w-4 mr-2" />
+                      SMS
+                    </Button>
+                  </div>
+                  {!userHasPhone && (
+                    <p className="text-xs text-muted-foreground">
+                      SMS delivery requires a registered phone number
+                    </p>
+                  )}
+                  {authError && (
+                    <p className="text-sm text-destructive mt-2">{authError}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={requestCodeMutation.isPending}
+                    data-testid="button-request-code"
+                  >
+                    {requestCodeMutation.isPending ? "Sending..." : "Send Verification Code"}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    className="w-full"
+                    onClick={() => setAuthStep("email")}
+                    data-testid="button-back-to-email"
+                  >
+                    Back
+                  </Button>
+                </div>
+              </form>
+            )}
+
+            {codeSentMessage && (
               <form onSubmit={handleVerifyCode} className="space-y-4">
                 <div>
                   <Input
@@ -303,11 +475,10 @@ export default function AdminDashboard() {
                     onChange={(e) => setVerificationCode(e.target.value)}
                     maxLength={6}
                     required
+                    autoFocus
                     data-testid="input-verification-code"
                   />
-                  {codeSentMessage && (
-                    <p className="text-sm text-green-600 mt-2">{codeSentMessage}</p>
-                  )}
+                  <p className="text-sm text-green-600 mt-2">{codeSentMessage}</p>
                   {authError && (
                     <p className="text-sm text-destructive mt-2">{authError}</p>
                   )}
@@ -316,7 +487,7 @@ export default function AdminDashboard() {
                   <Button 
                     type="submit" 
                     className="w-full"
-                    disabled={verifyCodeMutation.isPending}
+                    disabled={verifyCodeMutation.isPending || verificationCode.length !== 6}
                     data-testid="button-verify-code"
                   >
                     {verifyCodeMutation.isPending ? "Verifying..." : "Verify & Access Dashboard"}
@@ -325,10 +496,13 @@ export default function AdminDashboard() {
                     type="button" 
                     variant="ghost" 
                     className="w-full"
-                    onClick={() => setAuthStep("email")}
-                    data-testid="button-back-to-email"
+                    onClick={() => {
+                      setVerificationCode("");
+                      setCodeSentMessage("");
+                    }}
+                    data-testid="button-resend-code"
                   >
-                    Back to Email
+                    Request New Code
                   </Button>
                 </div>
               </form>
