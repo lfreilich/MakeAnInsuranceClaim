@@ -3,15 +3,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { step2Schema, type Step2Data } from "@shared/schema";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronLeft, Search, Loader2 } from "lucide-react";
+import { ChevronRight, ChevronLeft, Search, Loader2, MapPin } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Info } from "lucide-react";
 import { useState, useEffect } from "react";
-import { apiRequest } from "@/lib/queryClient";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface Step2PropertyDetailsProps {
   defaultValues: Partial<Step2Data>;
@@ -19,23 +18,23 @@ interface Step2PropertyDetailsProps {
   onBack: () => void;
 }
 
-// Moreland managed blocks
-const MANAGED_BLOCKS = [
-  "Arlington Court",
-  "Beaumont House",
-  "Carlton Gardens",
-  "Devonshire Towers",
-  "Elmwood Manor",
-  "Fairfield Heights",
-  "Greenwich Plaza",
-  "Hampton Court"
-];
+interface AddressPrediction {
+  description: string;
+  place_id: string;
+}
+
+interface ConstructionDetails {
+  age?: string;
+  construction_type?: string;
+}
 
 export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2PropertyDetailsProps) {
   const [addressSearch, setAddressSearch] = useState("");
-  const [addressResults, setAddressResults] = useState<any[]>([]);
+  const [addressPredictions, setAddressPredictions] = useState<AddressPrediction[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoadingConstruction, setIsLoadingConstruction] = useState(false);
+  const [constructionDetails, setConstructionDetails] = useState<ConstructionDetails | null>(null);
 
   const form = useForm<Step2Data>({
     resolver: zodResolver(step2Schema),
@@ -43,26 +42,29 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
       propertyAddress: defaultValues.propertyAddress || '',
       propertyBlock: defaultValues.propertyBlock || '',
       propertyUnit: defaultValues.propertyUnit || '',
+      propertyPlaceId: defaultValues.propertyPlaceId || '',
+      propertyConstructionAge: defaultValues.propertyConstructionAge || '',
+      propertyConstructionType: defaultValues.propertyConstructionType || '',
     },
   });
 
-  // Debounced address search
+  // Debounced Google Places autocomplete search
   useEffect(() => {
     if (addressSearch.length < 3) {
-      setAddressResults([]);
+      setAddressPredictions([]);
       return;
     }
 
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const response = await fetch(`/api/address/search?q=${encodeURIComponent(addressSearch)}`);
+        const response = await fetch(`/api/address/autocomplete?input=${encodeURIComponent(addressSearch)}`);
         if (response.ok) {
           const data = await response.json();
-          setAddressResults(data.addresses || []);
+          setAddressPredictions(data.predictions || []);
         }
       } catch (error) {
-        console.error("Address search failed:", error);
+        console.error("Address autocomplete failed:", error);
       } finally {
         setIsSearching(false);
       }
@@ -71,9 +73,47 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
     return () => clearTimeout(timer);
   }, [addressSearch]);
 
-  const handleAddressSelect = (address: any) => {
-    const fullAddress = address.formatted || address.line_1 || address.text || "";
-    form.setValue("propertyAddress", fullAddress);
+  const handleAddressSelect = async (prediction: AddressPrediction) => {
+    try {
+      // Get place details from Google Places
+      const detailsResponse = await fetch(`/api/address/details/${prediction.place_id}`);
+      if (detailsResponse.ok) {
+        const detailsData = await detailsResponse.json();
+        const formattedAddress = detailsData.result?.formatted_address || prediction.description;
+        
+        form.setValue("propertyAddress", formattedAddress);
+        form.setValue("propertyPlaceId", prediction.place_id);
+        
+        // Now fetch construction details from Chimnie
+        setIsLoadingConstruction(true);
+        try {
+          const constructionResponse = await fetch('/api/address/construction-details', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: formattedAddress }),
+          });
+          
+          if (constructionResponse.ok) {
+            const constructionData = await constructionResponse.json();
+            const details: ConstructionDetails = {
+              age: constructionData.construction_age || constructionData.age_band || 'Unknown',
+              construction_type: constructionData.construction_type || constructionData.build_type || 'Unknown',
+            };
+            
+            setConstructionDetails(details);
+            form.setValue("propertyConstructionAge", details.age || '');
+            form.setValue("propertyConstructionType", details.construction_type || '');
+          }
+        } catch (error) {
+          console.error("Failed to fetch construction details:", error);
+        } finally {
+          setIsLoadingConstruction(false);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to get place details:", error);
+    }
+    
     setIsOpen(false);
     setAddressSearch("");
   };
@@ -87,14 +127,14 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
       <div>
         <h2 className="text-2xl font-bold mb-2">Property Details</h2>
         <p className="text-muted-foreground">
-          Confirm the property address where the incident occurred. Only Moreland-managed properties are covered.
+          Enter your property address. We'll validate it and retrieve construction details automatically.
         </p>
       </div>
 
       <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
-        <AlertCircle className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
         <AlertDescription className="text-sm text-blue-900 dark:text-blue-100">
-          Your property must be within a Moreland-managed block to be covered under the buildings insurance policy.
+          All UK properties can submit claims through this portal. We'll verify the address using Google Places and retrieve construction details via Chimnie.
         </AlertDescription>
       </Alert>
 
@@ -102,35 +142,10 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
-            name="propertyBlock"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Moreland Block *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger data-testid="select-property-block">
-                      <SelectValue placeholder="Select your block" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {MANAGED_BLOCKS.map((block) => (
-                      <SelectItem key={block} value={block}>
-                        {block}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
             name="propertyAddress"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Full Property Address *</FormLabel>
+                <FormLabel>Property Address *</FormLabel>
                 <div className="space-y-2">
                   <Popover open={isOpen} onOpenChange={setIsOpen}>
                     <PopoverTrigger asChild>
@@ -141,14 +156,14 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
                         type="button"
                         data-testid="button-address-search"
                       >
-                        {field.value || "Search for address..."}
+                        {field.value || "Search for UK address..."}
                         <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-[400px] p-0" align="start">
+                    <PopoverContent className="w-[500px] p-0" align="start">
                       <Command shouldFilter={false}>
                         <CommandInput
-                          placeholder="Type to search UK addresses..."
+                          placeholder="Start typing address (e.g., 10 Downing Street...)"
                           value={addressSearch}
                           onValueChange={setAddressSearch}
                           data-testid="input-address-search"
@@ -160,22 +175,24 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
                               <span className="ml-2 text-sm text-muted-foreground">Searching...</span>
                             </div>
                           )}
-                          {!isSearching && addressResults.length === 0 && addressSearch.length >= 3 && (
+                          {!isSearching && addressPredictions.length === 0 && addressSearch.length >= 3 && (
                             <CommandEmpty>No addresses found. Try a different search.</CommandEmpty>
                           )}
-                          {!isSearching && addressResults.length === 0 && addressSearch.length < 3 && (
+                          {!isSearching && addressPredictions.length === 0 && addressSearch.length < 3 && (
                             <CommandEmpty>Type at least 3 characters to search</CommandEmpty>
                           )}
-                          {addressResults.length > 0 && (
-                            <CommandGroup heading="Addresses">
-                              {addressResults.map((address, index) => (
+                          {addressPredictions.length > 0 && (
+                            <CommandGroup heading="UK Addresses">
+                              {addressPredictions.map((prediction, index) => (
                                 <CommandItem
-                                  key={index}
-                                  value={address.formatted || address.line_1 || address.text}
-                                  onSelect={() => handleAddressSelect(address)}
+                                  key={prediction.place_id}
+                                  value={prediction.description}
+                                  onSelect={() => handleAddressSelect(prediction)}
                                   data-testid={`address-result-${index}`}
+                                  className="flex items-start gap-2"
                                 >
-                                  {address.formatted || address.line_1 || address.text}
+                                  <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                                  <span>{prediction.description}</span>
                                 </CommandItem>
                               ))}
                             </CommandGroup>
@@ -194,7 +211,7 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
                   </FormControl>
                 </div>
                 <FormDescription className="text-xs">
-                  Search for your address above, or type it manually below
+                  Search using Google Places above, or type the full address manually
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -209,7 +226,7 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
                 <FormLabel>Unit/Flat Number (Optional)</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="e.g., 12B or Ground Floor"
+                    placeholder="e.g., 12B, Ground Floor, or Unit 5"
                     {...field}
                     data-testid="input-property-unit"
                   />
@@ -218,6 +235,35 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
               </FormItem>
             )}
           />
+
+          {isLoadingConstruction && (
+            <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
+              <Loader2 className="w-4 h-4 animate-spin text-amber-600 dark:text-amber-400" />
+              <AlertDescription className="text-sm text-amber-900 dark:text-amber-100">
+                Fetching construction details from Chimnie...
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {constructionDetails && !isLoadingConstruction && (
+            <Card className="bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800">
+              <CardContent className="p-4">
+                <h4 className="font-semibold text-sm mb-3 text-green-900 dark:text-green-100">
+                  Property Construction Details
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="font-medium text-green-800 dark:text-green-200">Construction Age:</span>
+                    <p className="text-green-900 dark:text-green-100">{constructionDetails.age}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium text-green-800 dark:text-green-200">Construction Type:</span>
+                    <p className="text-green-900 dark:text-green-100">{constructionDetails.construction_type}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <div className="flex justify-between pt-4">
             <Button type="button" variant="outline" onClick={onBack} data-testid="button-back-step2">

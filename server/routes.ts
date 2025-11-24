@@ -122,30 +122,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Chimnie API - Address autocomplete
-  app.get("/api/address/search", async (req: Request, res: Response) => {
+  // Google Places API - Address autocomplete and validation
+  app.get("/api/address/autocomplete", async (req: Request, res: Response) => {
     try {
-      const query = req.query.q as string;
-      if (!query || query.length < 3) {
-        res.status(400).json({ error: "Query must be at least 3 characters" });
+      const input = req.query.input as string;
+      if (!input || input.length < 3) {
+        res.status(400).json({ error: "Input must be at least 3 characters" });
+        return;
+      }
+
+      const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+      if (!apiKey) {
+        console.warn("GOOGLE_PLACES_API_KEY not configured, address autocomplete disabled");
+        res.status(503).json({ error: "Address autocomplete service not configured" });
+        return;
+      }
+
+      // Call Google Places Autocomplete API
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&types=address&components=country:gb&key=${apiKey}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Google Places API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      console.error("Address autocomplete error:", error);
+      res.status(500).json({
+        error: error.message || "Failed to search addresses",
+      });
+    }
+  });
+
+  // Google Places API - Get place details
+  app.get("/api/address/details/:placeId", async (req: Request, res: Response) => {
+    try {
+      const placeId = req.params.placeId;
+      const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+
+      if (!apiKey) {
+        res.status(503).json({ error: "Google Places API not configured" });
+        return;
+      }
+
+      // Get place details from Google
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=formatted_address,address_components&key=${apiKey}`
+      );
+
+      if (!response.ok) {
+        throw new Error(`Google Places API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      console.error("Place details error:", error);
+      res.status(500).json({
+        error: error.message || "Failed to get place details",
+      });
+    }
+  });
+
+  // Chimnie API - Get construction details
+  app.post("/api/address/construction-details", async (req: Request, res: Response) => {
+    try {
+      const { address } = req.body;
+      if (!address) {
+        res.status(400).json({ error: "Address is required" });
         return;
       }
 
       const apiKey = process.env.CHIMNIE_API_KEY;
       if (!apiKey) {
-        console.warn("CHIMNIE_API_KEY not configured, address autocomplete disabled");
-        res.status(503).json({ error: "Address autocomplete service not configured" });
+        console.warn("CHIMNIE_API_KEY not configured, construction details disabled");
+        res.status(503).json({ error: "Construction details service not configured" });
         return;
       }
 
-      // Call Chimnie API for address autocomplete
+      // Call Chimnie API for construction and age details
       const response = await fetch(
-        `https://api.chimnie.com/v1/address/search?q=${encodeURIComponent(query)}`,
+        `https://api.chimnie.com/v1/property/details`,
         {
+          method: 'POST',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
+          body: JSON.stringify({ address }),
         }
       );
 
@@ -156,9 +224,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const data = await response.json();
       res.json(data);
     } catch (error: any) {
-      console.error("Address search error:", error);
+      console.error("Construction details error:", error);
       res.status(500).json({
-        error: error.message || "Failed to search addresses",
+        error: error.message || "Failed to get construction details",
       });
     }
   });

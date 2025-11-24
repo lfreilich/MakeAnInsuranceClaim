@@ -16,8 +16,11 @@ export const claims = pgTable("claims", {
   
   // Property Details
   propertyAddress: text("property_address").notNull(),
-  propertyBlock: varchar("property_block", { length: 255 }).notNull(),
+  propertyBlock: varchar("property_block", { length: 255 }),
   propertyUnit: varchar("property_unit", { length: 100 }),
+  propertyPlaceId: varchar("property_place_id", { length: 500 }),
+  propertyConstructionAge: varchar("property_construction_age", { length: 100 }),
+  propertyConstructionType: varchar("property_construction_type", { length: 255 }),
   
   // Incident Details
   incidentDate: timestamp("incident_date").notNull(),
@@ -113,8 +116,11 @@ export const step1Schema = z.object({
 
 export const step2Schema = z.object({
   propertyAddress: z.string().min(10, "Please provide the full property address"),
-  propertyBlock: z.string().min(1, "Please select your block"),
+  propertyBlock: z.string().optional(),
   propertyUnit: z.string().optional(),
+  propertyPlaceId: z.string().optional(),
+  propertyConstructionAge: z.string().optional(),
+  propertyConstructionType: z.string().optional(),
 });
 
 export const step3Schema = z.object({

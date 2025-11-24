@@ -47,6 +47,10 @@ export default function ClaimForm() {
     const normalizedFormData = {
       ...formData,
       ...step8Data,
+      // Convert Date to ISO string for JSON serialization
+      incidentDate: formData.incidentDate instanceof Date 
+        ? formData.incidentDate.toISOString() 
+        : formData.incidentDate,
       hasBuildingDamage: formData.hasBuildingDamage ?? false,
       hasTheft: formData.hasTheft ?? false,
       theftPoliceReported: formData.theftPoliceReported ?? false,
@@ -62,13 +66,14 @@ export default function ClaimForm() {
 
     try {
       const response = await apiRequest("POST", "/api/claims", normalizedFormData);
+      const data = await response.json();
       
       toast({
         title: "Claim Submitted Successfully",
-        description: `Your claim reference is ${response.referenceNumber}`,
+        description: `Your claim reference is ${data.referenceNumber}`,
       });
       
-      setLocation(`/claim/success/${response.referenceNumber}`);
+      setLocation(`/claim/success/${data.referenceNumber}`);
     } catch (error: any) {
       console.error("Claim submission error:", error);
       toast({
