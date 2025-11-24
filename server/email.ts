@@ -149,3 +149,67 @@ export async function sendClaimConfirmationEmail(claim: Claim): Promise<void> {
     // Don't throw error - claim is still saved even if email fails
   }
 }
+
+export async function sendVerificationCodeEmail(email: string, code: string): Promise<void> {
+  const { client: resend, fromEmail } = await getUncachableResendClient();
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #1e40af; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9fafb; }
+        .code-box { background: #dbeafe; padding: 20px; margin: 20px 0; text-align: center; border-radius: 8px; }
+        .code { font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #1e40af; }
+        .warning { background: #fef3c7; padding: 15px; margin: 20px 0; border-left: 4px solid #f59e0b; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1>Verification Code</h1>
+        </div>
+        <div class="content">
+          <p>Someone requested access to the Moreland Estate Management Claims Portal using this email address.</p>
+          
+          <div class="code-box">
+            <p style="margin: 0; font-size: 14px; color: #666;">Your verification code is:</p>
+            <div class="code">${code}</div>
+            <p style="margin: 10px 0 0 0; font-size: 12px; color: #666;">This code expires in 10 minutes</p>
+          </div>
+          
+          <p><strong>Enter this code to complete your login.</strong></p>
+          
+          <div class="warning">
+            <strong>Security Note:</strong> If you did not request this code, please ignore this email. Your account remains secure.
+          </div>
+          
+          <p>For assistance, contact us at <a href="mailto:${CLAIMS_EMAIL}">${CLAIMS_EMAIL}</a></p>
+        </div>
+        <div class="footer">
+          <p>© ${new Date().getFullYear()} Moreland Estate Management<br>
+          Buildings Insurance Claims Portal</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    await resend.emails.send({
+      from: fromEmail,
+      to: email,
+      subject: `Your Verification Code - Moreland Claims Portal`,
+      html: htmlContent,
+    });
+
+    console.log(`Verification code email sent to ${email}`);
+  } catch (error) {
+    console.error("Verification email sending failed:", error);
+    throw error; // Throw error so user knows verification failed
+  }
+}

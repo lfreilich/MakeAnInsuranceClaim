@@ -4,13 +4,106 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { ObjectStorageService } from "./objectStorage";
 import { enhanceIncidentDescription } from "./openai";
-import { sendClaimConfirmationEmail } from "./email";
-import { insertClaimSchema, type InsertClaim } from "@shared/schema";
+import { sendClaimConfirmationEmail, sendVerificationCodeEmail } from "./email";
+import { 
+  insertClaimSchema, 
+  type InsertClaim,
+  requestCodeSchema,
+  verifyCodeSchema,
+} from "@shared/schema";
 import { z } from "zod";
 
 const objectStorageService = new ObjectStorageService();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Authentication: Request verification code
+  app.post("/api/auth/request-code", async (req: Request, res: Response) => {
+    try {
+      const { email, claimId } = requestCodeSchema.parse(req.body);
+      
+      // Generate verification code
+      const { code, expiresAt } = await storage.createVerificationCode(email, claimId);
+      
+      // Send verification code via email
+      await sendVerificationCodeEmail(email, code);
+      
+      res.status(200).json({ 
+        message: "Verification code sent to your email",
+        expiresAt,
+      });
+    } catch (error: any) {
+      console.error("Request code error:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Invalid email address", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Failed to send verification code" });
+      }
+    }
+  });
+
+  // Authentication: Verify code and create session
+  app.post("/api/auth/verify-code", async (req: Request, res: Response) => {
+    try {
+      const { email, code } = verifyCodeSchema.parse(req.body);
+      
+      // Verify the code
+      const isValid = await storage.verifyCode(email, code);
+      
+      if (!isValid) {
+        res.status(401).json({ error: "Invalid or expired verification code" });
+        return;
+      }
+      
+      // Get user access level
+      const accessLevel = await storage.getUserAccessLevel(email);
+      
+      // Store in session
+      if (req.session) {
+        req.session.user = {
+          email,
+          role: accessLevel.role,
+          claimAccess: accessLevel.claimAccess || [],
+        };
+      }
+      
+      res.status(200).json({
+        message: "Authentication successful",
+        user: {
+          email,
+          role: accessLevel.role,
+          claimAccess: accessLevel.claimAccess || [],
+        },
+      });
+    } catch (error: any) {
+      console.error("Verify code error:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Invalid request", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Authentication failed" });
+      }
+    }
+  });
+
+  // Authentication: Check session / Get current user
+  app.get("/api/auth/me", async (req: Request, res: Response) => {
+    if (req.session?.user) {
+      res.json({ user: req.session.user });
+    } else {
+      res.status(401).json({ error: "Not authenticated" });
+    }
+  });
+
+  // Authentication: Logout
+  app.post("/api/auth/logout", async (req: Request, res: Response) => {
+    req.session?.destroy((err) => {
+      if (err) {
+        res.status(500).json({ error: "Failed to logout" });
+      } else {
+        res.status(200).json({ message: "Logged out successfully" });
+      }
+    });
+  });
+
   // Submit a new insurance claim
   app.post("/api/claims", async (req: Request, res: Response) => {
     try {
