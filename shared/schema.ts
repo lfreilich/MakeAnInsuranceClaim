@@ -121,6 +121,42 @@ export const auditLogs = pgTable("audit_logs", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Payments table - track financial transactions via Blink Payment
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  claimId: integer("claim_id").notNull(),
+  
+  // Payment Details
+  paymentType: varchar("payment_type", { length: 50 }).notNull(), // "settlement", "excess", "refund"
+  amount: integer("amount").notNull(), // Amount in pence
+  currency: varchar("currency", { length: 3 }).notNull().default("GBP"),
+  
+  // Payment Status & Method
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // "pending", "completed", "failed", "cancelled"
+  paymentMethod: varchar("payment_method", { length: 50 }), // "card", "open_banking", "direct_debit"
+  
+  // Blink Payment Integration
+  blinkPaymentId: varchar("blink_payment_id", { length: 255 }), // Blink transaction ID
+  blinkPaymentLink: text("blink_payment_link"), // Generated payment link
+  blinkIntentId: varchar("blink_intent_id", { length: 255 }), // Payment intent ID
+  
+  // Transaction Details
+  transactionReference: varchar("transaction_reference", { length: 100 }),
+  paidAt: timestamp("paid_at"),
+  description: text("description"),
+  
+  // Recipient/Payer
+  recipientName: varchar("recipient_name", { length: 255 }),
+  recipientEmail: varchar("recipient_email", { length: 255 }),
+  
+  // Metadata
+  metadata: jsonb("metadata"), // Additional payment data
+  createdBy: integer("created_by"), // User who created the payment record
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
 // Claim Status Transitions table - dedicated tracking of status changes
 export const claimStatusTransitions = pgTable("claim_status_transitions", {
   id: serial("id").primaryKey(),
@@ -183,6 +219,9 @@ export type InsertClaimNote = typeof claimNotes.$inferInsert;
 
 export type LossAssessor = typeof lossAssessors.$inferSelect;
 export type InsertLossAssessor = typeof lossAssessors.$inferInsert;
+
+export type Payment = typeof payments.$inferSelect;
+export type InsertPayment = typeof payments.$inferInsert;
 
 // Zod schemas for validation
 export const insertClaimSchema = createInsertSchema(claims, {
@@ -418,4 +457,32 @@ export const insertLossAssessorSchema = createInsertSchema(lossAssessors, {
 }).omit({
   id: true,
   createdAt: true,
+});
+
+// Payment validation schemas
+export const insertPaymentSchema = createInsertSchema(payments, {
+  amount: z.number().int().positive("Amount must be a positive integer in pence"),
+  paymentType: z.enum(["settlement", "excess", "refund"]),
+  status: z.enum(["pending", "completed", "failed", "cancelled"]).default("pending"),
+  currency: z.string().length(3).default("GBP"),
+  recipientEmail: z.string().email("Invalid recipient email address").optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const updatePaymentStatusSchema = z.object({
+  status: z.enum(["pending", "completed", "failed", "cancelled"]),
+  paidAt: z.string().optional(),
+  transactionReference: z.string().optional(),
+  blinkPaymentId: z.string().optional(),
+  paymentMethod: z.string().optional(),
+});
+
+// Claim closure validation schema
+export const closeClaimSchema = z.object({
+  closeReason: z.string().min(10, "Close reason must be at least 10 characters"),
+  finalNotes: z.string().optional(),
+  finalSettlementAmount: z.number().optional(),
 });
