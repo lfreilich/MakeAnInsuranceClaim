@@ -51,7 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get a claim by ID
   app.get("/api/claims/:id", async (req: Request, res: Response) => {
     try {
-      const claim = await storage.getClaim(req.params.id);
+      const claim = await storage.getClaim(parseInt(req.params.id));
       if (!claim) {
         res.status(404).json({ error: "Claim not found" });
         return;
