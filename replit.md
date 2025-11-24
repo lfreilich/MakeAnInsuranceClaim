@@ -110,17 +110,25 @@ Preferred communication style: Simple, everyday language.
 - Fallback: Text formatting function when AI unavailable
 - Uses Replit-provided credentials (billed to Replit credits)
 
-**Email Service**: Nodemailer with SMTP
-- Configurable SMTP settings via environment variables
-- HTML email templates for claim confirmations
-- Fallback to JSON transport in development
+**Email Service**: Resend (via Replit Integration)
+- Transactional email service for claim confirmations
+- Managed API key authentication via Replit Connectors
+- HTML email templates with professional styling
 - Non-blocking email sending (errors logged but don't fail requests)
+- Dual notifications: claimant confirmation + internal team alert
 
 **File Storage**: Google Cloud Storage
 - Replit Object Storage integration via sidecar service
 - External account authentication pattern
 - File upload with streaming support
 - ACL-based access control
+
+**Address Autocomplete**: Chimnie API
+- UK property data API for address search and validation
+- Real-time address autocomplete in Step 2 (Property Details)
+- Debounced search (500ms) with minimum 3 characters
+- Fallback to manual address entry if service unavailable
+- API key managed via CHIMNIE_API_KEY secret
 
 **Third-party UI Libraries**:
 - Uppy for advanced file upload UI (dashboard, progress, multi-file)
@@ -145,8 +153,9 @@ Preferred communication style: Simple, everyday language.
 - `DATABASE_URL` - PostgreSQL connection string (required)
 - `AI_INTEGRATIONS_OPENAI_BASE_URL` - AI service endpoint
 - `AI_INTEGRATIONS_OPENAI_API_KEY` - AI service authentication
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` - Email configuration
-- `FROM_EMAIL`, `CLAIMS_EMAIL` - Email addresses
+- `CHIMNIE_API_KEY` - Chimnie API for UK address autocomplete (secret)
+- `REPLIT_CONNECTORS_HOSTNAME` - Resend email service connection
+- Session and object storage secrets managed by Replit
 
 **Build Configuration**:
 - Vite for frontend bundling with React plugin
