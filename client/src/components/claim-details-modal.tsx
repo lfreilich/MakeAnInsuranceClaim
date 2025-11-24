@@ -10,9 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { User, Home, AlertCircle, Clock, MessageSquare, Plus, UserCheck, Building2, Save } from "lucide-react";
+import { User, Home, AlertCircle, Clock, MessageSquare, Plus, UserCheck, Building2, Save, DollarSign, XCircle } from "lucide-react";
 import { format } from "date-fns";
-import type { Claim, AuditLog, ClaimNote, User as UserType, LossAssessor } from "@shared/schema";
+import type { Claim, AuditLog, ClaimNote, User as UserType, LossAssessor, Payment } from "@shared/schema";
 
 interface ClaimDetailsModalProps {
   claim: Claim | null;
@@ -31,6 +31,16 @@ export function ClaimDetailsModal({ claim, users, onClose }: ClaimDetailsModalPr
   const [insurerResponseDate, setInsurerResponseDate] = useState(
     claim?.insurerResponseDate ? format(new Date(claim.insurerResponseDate), "yyyy-MM-dd") : ""
   );
+  
+  const [closeClaimDialogOpen, setCloseClaimDialogOpen] = useState(false);
+  const [closeReason, setCloseReason] = useState("");
+  const [finalNotes, setFinalNotes] = useState("");
+  
+  const [addingPayment, setAddingPayment] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentType, setPaymentType] = useState<"settlement" | "excess" | "refund">("settlement");
+  const [paymentDescription, setPaymentDescription] = useState("");
+  
   const { toast } = useToast();
 
   const { data: lossAssessors = [] } = useQuery<LossAssessor[]>({
@@ -55,6 +65,11 @@ export function ClaimDetailsModal({ claim, users, onClose }: ClaimDetailsModalPr
 
   const { data: notes = [] } = useQuery<ClaimNote[]>({
     queryKey: ["/api/claims", claim?.id, "notes"],
+    enabled: !!claim,
+  });
+
+  const { data: payments = [] } = useQuery<Payment[]>({
+    queryKey: ["/api/claims", claim?.id, "payments"],
     enabled: !!claim,
   });
 
@@ -126,6 +141,66 @@ export function ClaimDetailsModal({ claim, users, onClose }: ClaimDetailsModalPr
     },
   });
 
+  const createPaymentMutation = useMutation({
+    mutationFn: async () => {
+      const amountInPence = Math.round(parseFloat(paymentAmount) * 100);
+      await apiRequest("POST", `/api/claims/${claim?.id}/payments`, {
+        paymentType,
+        amount: amountInPence,
+        description: paymentDescription,
+        recipientName: claim?.claimantName,
+        recipientEmail: claim?.claimantEmail,
+        userId: 1,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/claims", claim?.id, "payments"] });
+      setAddingPayment(false);
+      setPaymentAmount("");
+      setPaymentDescription("");
+      setPaymentType("settlement");
+      toast({
+        title: "Success",
+        description: "Payment record created successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create payment",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const closeClaimMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", `/api/claims/${claim?.id}/close`, {
+        closeReason,
+        userId: 1,
+        finalNotes,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/claims"] });
+      setCloseClaimDialogOpen(false);
+      setCloseReason("");
+      setFinalNotes("");
+      toast({
+        title: "Success",
+        description: "Claim closed successfully",
+      });
+      onClose();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to close claim",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleAddNote = () => {
     if (!newNote.trim() || !claim) return;
 
@@ -156,16 +231,39 @@ export function ClaimDetailsModal({ claim, users, onClose }: ClaimDetailsModalPr
   if (!claim) return null;
 
   return (
+    <>
     <Dialog open={!!claim} onOpenChange={onClose}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Claim Details - {claim.referenceNumber}</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Claim Details - {claim.referenceNumber}</DialogTitle>
+            {!claim.closedAt && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setCloseClaimDialogOpen(true)}
+                data-testid="button-close-claim"
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Close Claim
+              </Button>
+            )}
+            {claim.closedAt && (
+              <Badge variant="secondary" data-testid="badge-claim-closed">
+                Claim Closed
+              </Badge>
+            )}
+          </div>
         </DialogHeader>
 
         <Tabs defaultValue="details" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="details" data-testid="tab-details">
               Details
+            </TabsTrigger>
+            <TabsTrigger value="payments" data-testid="tab-payments">
+              <DollarSign className="h-4 w-4 mr-2" />
+              Payments ({payments.length})
             </TabsTrigger>
             <TabsTrigger value="audit" data-testid="tab-audit">
               <Clock className="h-4 w-4 mr-2" />
@@ -386,6 +484,147 @@ export function ClaimDetailsModal({ claim, users, onClose }: ClaimDetailsModalPr
             </div>
           </TabsContent>
 
+          <TabsContent value="payments" className="mt-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Payment Records</h3>
+                {!claim.closedAt && (
+                  <Button
+                    size="sm"
+                    onClick={() => setAddingPayment(!addingPayment)}
+                    data-testid="button-add-payment"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {addingPayment ? "Cancel" : "Add Payment"}
+                  </Button>
+                )}
+              </div>
+
+              {addingPayment && (
+                <div className="border rounded-lg p-4 bg-muted/50 space-y-4">
+                  <h4 className="font-medium">New Payment Record</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="payment-type">Payment Type</Label>
+                      <Select
+                        value={paymentType}
+                        onValueChange={(value: any) => setPaymentType(value)}
+                      >
+                        <SelectTrigger id="payment-type" data-testid="select-payment-type">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="settlement">Settlement Payment</SelectItem>
+                          <SelectItem value="excess">Excess Collection</SelectItem>
+                          <SelectItem value="refund">Refund</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="payment-amount">Amount (£)</Label>
+                      <Input
+                        id="payment-amount"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={paymentAmount}
+                        onChange={(e) => setPaymentAmount(e.target.value)}
+                        placeholder="0.00"
+                        data-testid="input-payment-amount"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="payment-description">Description (Optional)</Label>
+                    <Textarea
+                      id="payment-description"
+                      value={paymentDescription}
+                      onChange={(e) => setPaymentDescription(e.target.value)}
+                      placeholder="Enter payment description..."
+                      rows={2}
+                      data-testid="input-payment-description"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setAddingPayment(false);
+                        setPaymentAmount("");
+                        setPaymentDescription("");
+                      }}
+                      data-testid="button-cancel-payment"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => createPaymentMutation.mutate()}
+                      disabled={!paymentAmount || parseFloat(paymentAmount) <= 0 || createPaymentMutation.isPending}
+                      data-testid="button-save-payment"
+                    >
+                      {createPaymentMutation.isPending ? "Creating..." : "Create Payment"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {payments.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    No payment records yet
+                  </div>
+                ) : (
+                  payments.map((payment) => (
+                    <div key={payment.id} className="border rounded-lg p-4" data-testid={`payment-record-${payment.id}`}>
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-semibold text-lg">
+                              £{(payment.amount / 100).toFixed(2)}
+                            </span>
+                            <Badge 
+                              variant={payment.status === "completed" ? "default" : payment.status === "pending" ? "secondary" : "destructive"}
+                              data-testid={`payment-status-${payment.id}`}
+                            >
+                              {payment.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1 capitalize">
+                            {payment.paymentType.replace("_", " ")}
+                          </p>
+                        </div>
+                        <div className="text-right text-sm">
+                          <p className="text-muted-foreground">
+                            Created: {format(new Date(payment.createdAt), "dd/MM/yyyy HH:mm")}
+                          </p>
+                          {payment.paidAt && (
+                            <p className="text-success">
+                              Paid: {format(new Date(payment.paidAt), "dd/MM/yyyy HH:mm")}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      {payment.description && (
+                        <p className="text-sm mb-2">{payment.description}</p>
+                      )}
+                      {payment.transactionReference && (
+                        <p className="text-sm text-muted-foreground">
+                          Transaction: {payment.transactionReference}
+                        </p>
+                      )}
+                      {payment.recipientName && (
+                        <p className="text-sm text-muted-foreground">
+                          Recipient: {payment.recipientName}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
           <TabsContent value="audit" className="mt-4">
             <div className="space-y-3">
               {auditLogs.length === 0 ? (
@@ -500,5 +739,75 @@ export function ClaimDetailsModal({ claim, users, onClose }: ClaimDetailsModalPr
         </Tabs>
       </DialogContent>
     </Dialog>
+
+    <Dialog open={closeClaimDialogOpen} onOpenChange={setCloseClaimDialogOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Close Claim - {claim.referenceNumber}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="close-reason">Close Reason *</Label>
+            <Textarea
+              id="close-reason"
+              value={closeReason}
+              onChange={(e) => setCloseReason(e.target.value)}
+              placeholder="Enter reason for closing this claim (minimum 10 characters)..."
+              rows={3}
+              data-testid="textarea-close-reason"
+            />
+            {closeReason && closeReason.length < 10 && (
+              <p className="text-sm text-destructive mt-1">
+                Close reason must be at least 10 characters
+              </p>
+            )}
+          </div>
+          <div>
+            <Label htmlFor="final-notes">Final Notes (Optional)</Label>
+            <Textarea
+              id="final-notes"
+              value={finalNotes}
+              onChange={(e) => setFinalNotes(e.target.value)}
+              placeholder="Add any final notes about this claim closure..."
+              rows={3}
+              data-testid="textarea-final-notes"
+            />
+          </div>
+          <div className="bg-muted p-3 rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              <strong>Note:</strong> Closing a claim will:
+            </p>
+            <ul className="text-sm text-muted-foreground list-disc list-inside mt-2 space-y-1">
+              <li>Set the claim status to "closed"</li>
+              <li>Record the closure timestamp and reason</li>
+              <li>Create an audit log entry</li>
+              <li>Prevent further modifications (loss assessor assignment, payments, etc.)</li>
+            </ul>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCloseClaimDialogOpen(false);
+                setCloseReason("");
+                setFinalNotes("");
+              }}
+              data-testid="button-cancel-close-claim"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => closeClaimMutation.mutate()}
+              disabled={!closeReason || closeReason.length < 10 || closeClaimMutation.isPending}
+              data-testid="button-confirm-close-claim"
+            >
+              {closeClaimMutation.isPending ? "Closing..." : "Close Claim"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
