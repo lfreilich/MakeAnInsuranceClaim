@@ -586,13 +586,13 @@ export class DatabaseStorage implements IStorage {
 
   async getUserAccessLevel(email: string, claimId?: number): Promise<{
     role: 'staff' | 'tenant' | 'assessor' | 'none';
-    claimAccess?: number[];
+    claimAccess: number[];
   }> {
     const emailLower = email.toLowerCase();
 
     // Check if staff domain (@mnninsure.com or @morelandestate.co.uk)
     if (emailLower.endsWith('@mnninsure.com') || emailLower.endsWith('@morelandestate.co.uk')) {
-      return { role: 'staff' };
+      return { role: 'staff', claimAccess: [] };
     }
 
     // Check if loss assessor
@@ -646,7 +646,7 @@ export class DatabaseStorage implements IStorage {
       };
     }
 
-    return { role: 'none' };
+    return { role: 'none', claimAccess: [] };
   }
 
   async getClaimsByEmail(email: string): Promise<Claim[]> {
