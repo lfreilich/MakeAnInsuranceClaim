@@ -250,6 +250,12 @@ export default function AdminDashboard() {
                 Manage Policies
               </Button>
             </Link>
+            <Link href="/admin/loss-assessors">
+              <Button variant="outline" data-testid="button-manage-assessors">
+                <UserCheck className="h-4 w-4 mr-2" />
+                Manage Loss Assessors
+              </Button>
+            </Link>
             <Button
               onClick={exportToCSV}
               variant="outline"
