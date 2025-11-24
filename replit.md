@@ -162,6 +162,62 @@ Preferred communication style: Simple, everyday language.
 - Cartographer for code navigation
 - TypeScript for type safety across full stack
 
+### Authentication & Access Control
+
+**Authentication Method**: Custom email-based passwordless authentication
+- Two-step verification: request code → verify code
+- 6-digit verification codes sent via Resend email service
+- Codes expire after 10 minutes and are single-use
+- Sessions persist for 30 minutes with rolling timeout (resets on activity)
+
+**User Roles & Access Patterns**:
+1. **Staff** (full access to all claims and management features)
+   - Domains: @mnninsure.com, @morelandestate.co.uk
+   - Can view, edit, assign, and manage all claims
+   - Access to policies, users, loss assessors
+   - Can add/delete notes, close claims, manage payments
+
+2. **Tenant** (limited to own claims)
+   - Any email matching a claim's `claimant_email` field
+   - Can view and add notes to their own claims only
+   - Cannot access other tenants' claims
+   - Cannot access admin features
+
+3. **Assessor** (read-only to assigned claims)
+   - Email matching `loss_assessor.email` for claims they're assigned to
+   - Read-only access: can view claim details, notes, documents
+   - Cannot create/edit notes or modify claims
+   - Cannot access unassigned claims
+
+**Access Control Middleware**:
+- `requireAuth`: Basic authentication check (any logged-in user)
+- `requireStaff`: Staff-only endpoints (management features)
+- `requireClaimAccess`: Staff OR claim owner OR assigned assessor (read access)
+- `requireClaimWrite`: Staff OR claim owner only (assessors excluded)
+
+**Session Structure**:
+```typescript
+{
+  user: {
+    email: string,
+    role: 'staff' | 'tenant' | 'assessor',
+    claimAccess: number[] // Array of claim IDs user can access
+  }
+}
+```
+
+**Protected Endpoints**:
+- Staff-only: All management endpoints (policies, users, assessors, payments, claim closure)
+- Claim-scoped: Individual claim access, notes, audit logs, payments
+- Public: Claim submission, authentication, address lookup, AI enhancement
+
+**Security Features**:
+- Role automatically determined by email domain and claim/assessor relationships
+- No pre-registration required (access control at login time)
+- Reference number lookups enforce claim access checks
+- All sensitive GET endpoints protected with appropriate middleware
+- Session cookies with httpOnly flag
+
 ### Configuration Management
 
 **Environment Variables**:
