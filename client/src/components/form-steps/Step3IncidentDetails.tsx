@@ -26,6 +26,7 @@ export function Step3IncidentDetails({ defaultValues, onNext, onBack }: Step3Inc
   
   const form = useForm<Step3Data>({
     resolver: zodResolver(step3Schema),
+    mode: 'onChange',
     defaultValues: {
       incidentDate: defaultValues.incidentDate ? new Date(defaultValues.incidentDate) : new Date(),
       incidentDescription: defaultValues.incidentDescription || '',
@@ -100,7 +101,11 @@ export function Step3IncidentDetails({ defaultValues, onNext, onBack }: Step3Inc
                     <Calendar
                       mode="single"
                       selected={field.value}
-                      onSelect={field.onChange}
+                      onSelect={(date) => {
+                        if (date) {
+                          field.onChange(date);
+                        }
+                      }}
                       disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                       initialFocus
                     />

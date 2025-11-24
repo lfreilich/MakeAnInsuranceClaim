@@ -162,9 +162,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/verify-code", async (req: Request, res: Response) => {
     try {
       const { email, code } = verifyCodeSchema.parse(req.body);
+      const normalizedEmail = email.toLowerCase();
       
       // Verify the code
-      const isValid = await storage.verifyCode(email, code);
+      const isValid = await storage.verifyCode(normalizedEmail, code);
       
       if (!isValid) {
         res.status(401).json({ error: "Invalid or expired verification code" });
@@ -172,12 +173,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get user access level
-      const accessLevel = await storage.getUserAccessLevel(email);
+      const accessLevel = await storage.getUserAccessLevel(normalizedEmail);
       
       // Store in session
       if (req.session) {
         req.session.user = {
-          email,
+          email: normalizedEmail,
           role: accessLevel.role,
           claimAccess: accessLevel.claimAccess || [],
         };
@@ -186,7 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json({
         message: "Authentication successful",
         user: {
-          email,
+          email: normalizedEmail,
           role: accessLevel.role,
           claimAccess: accessLevel.claimAccess || [],
         },

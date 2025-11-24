@@ -241,6 +241,7 @@ export const insertClaimSchema = createInsertSchema(claims, {
   claimantEmail: z.string().email("Invalid email address"),
   claimantPhone: z.string().min(10, "Phone number must be at least 10 characters"),
   incidentDescription: z.string().min(50, "Description must be at least 50 characters"),
+  incidentDate: z.coerce.date(), // Coerce string to Date for JSON payloads
   damagePhotos: z.array(z.string()).optional().default([]),
   repairQuotes: z.array(z.string()).optional().default([]),
   invoices: z.array(z.string()).optional().default([]),
