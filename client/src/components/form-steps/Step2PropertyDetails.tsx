@@ -35,13 +35,13 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
   const [isOpen, setIsOpen] = useState(false);
   const [isLoadingConstruction, setIsLoadingConstruction] = useState(false);
   const [constructionDetails, setConstructionDetails] = useState<ConstructionDetails | null>(null);
+  const [hasSelectedAddress, setHasSelectedAddress] = useState(!!defaultValues.propertyPlaceId);
 
   const form = useForm<Step2Data>({
     resolver: zodResolver(step2Schema),
     defaultValues: {
       propertyAddress: defaultValues.propertyAddress || '',
       propertyBlock: defaultValues.propertyBlock || '',
-      propertyUnit: defaultValues.propertyUnit || '',
       propertyPlaceId: defaultValues.propertyPlaceId || '',
       propertyConstructionAge: defaultValues.propertyConstructionAge || '',
       propertyConstructionType: defaultValues.propertyConstructionType || '',
@@ -83,6 +83,7 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
         
         form.setValue("propertyAddress", formattedAddress);
         form.setValue("propertyPlaceId", prediction.place_id);
+        setHasSelectedAddress(true);
         
         // Now fetch construction details from Chimnie
         setIsLoadingConstruction(true);
@@ -135,7 +136,7 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
       <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
         <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
         <AlertDescription className="text-sm text-blue-900 dark:text-blue-100">
-          All UK properties can submit claims through this portal. We'll verify the address using Google Places and retrieve construction details via Chimnie.
+          <strong>Required:</strong> Use the Google Places search below to find and select your UK property address. We'll verify it and retrieve construction details automatically.
         </AlertDescription>
       </Alert>
 
@@ -147,36 +148,28 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Property Address *</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="e.g., Flat 12B, 45 High Street, London, SW1A 1AA"
-                    {...field}
-                    data-testid="input-property-address"
-                  />
-                </FormControl>
-                <FormDescription className="text-xs">
-                  Enter the full UK property address
-                </FormDescription>
-                <FormMessage />
-                <div className="mt-2">
+                <div className="space-y-3">
                   <Popover open={isOpen} onOpenChange={setIsOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
-                        size="sm"
                         role="combobox"
-                        className="w-full justify-between font-normal"
+                        className="w-full justify-between font-normal h-auto min-h-[44px] py-3"
                         type="button"
                         data-testid="button-address-search"
                       >
-                        <Search className="mr-2 h-4 w-4 shrink-0" />
-                        Search with Google Places
+                        <div className="flex items-center gap-2 flex-1 text-left">
+                          <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span className={field.value ? "text-foreground" : "text-muted-foreground"}>
+                            {field.value || "Click to search for UK address..."}
+                          </span>
+                        </div>
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[500px] p-0" align="start">
                       <Command shouldFilter={false}>
                         <CommandInput
-                          placeholder="Start typing address (e.g., 10 Downing Street...)"
+                          placeholder="Start typing address (e.g., 10 Downing Street, London...)"
                           value={addressSearch}
                           onValueChange={setAddressSearch}
                           data-testid="input-address-search"
@@ -214,24 +207,43 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
                       </Command>
                     </PopoverContent>
                   </Popover>
-                </div>
-              </FormItem>
-            )}
-          />
 
-          <FormField
-            control={form.control}
-            name="propertyUnit"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Unit/Flat Number (Optional)</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="e.g., 12B, Ground Floor, or Unit 5"
-                    {...field}
-                    data-testid="input-property-unit"
-                  />
-                </FormControl>
+                  {!hasSelectedAddress && (
+                    <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
+                      <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      <AlertDescription className="text-sm text-amber-900 dark:text-amber-100">
+                        You must select an address from Google Places to continue
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {hasSelectedAddress && field.value && (
+                    <div className="flex items-start gap-2 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md">
+                      <MapPin className="h-4 w-4 mt-0.5 text-green-600 dark:text-green-400 shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-green-900 dark:text-green-100">Selected Address:</p>
+                        <p className="text-sm text-green-800 dark:text-green-200">{field.value}</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          form.setValue("propertyAddress", "");
+                          form.setValue("propertyPlaceId", "");
+                          setHasSelectedAddress(false);
+                          setConstructionDetails(null);
+                        }}
+                        data-testid="button-clear-address"
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <FormDescription className="text-xs">
+                  Click the search button above and select your property from the Google Places results
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}

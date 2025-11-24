@@ -116,10 +116,9 @@ export const step1Schema = z.object({
 });
 
 export const step2Schema = z.object({
-  propertyAddress: z.string().optional().default("Test Address"),
+  propertyAddress: z.string().min(1, "Please select an address from Google Places"),
   propertyBlock: z.string().optional(),
-  propertyUnit: z.string().optional(),
-  propertyPlaceId: z.string().optional(),
+  propertyPlaceId: z.string().min(1, "Please select an address from Google Places"),
   propertyConstructionAge: z.string().optional(),
   propertyConstructionType: z.string().optional(),
 });
