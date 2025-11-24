@@ -6,6 +6,9 @@ import { ObjectStorageService } from "./objectStorage";
 import { enhanceIncidentDescription } from "./openai";
 import { sendClaimConfirmationEmail, sendVerificationCodeEmail } from "./email";
 import { notifyClaimCreated, notifyClaimUpdated, notifyClaimStatusChanged, sendVerificationCodeSMS } from "./notifications";
+import { db } from "./db";
+import { verificationCodes } from "@shared/schema";
+import { eq, and } from "drizzle-orm";
 import { 
   insertClaimSchema, 
   type InsertClaim,
@@ -28,11 +31,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email } = z.object({ email: z.string().email() }).parse(req.body);
       
-      // Check if user exists in users table
-      const user = await storage.getUserByEmail(email.toLowerCase());
+      const normalizedEmail = email.toLowerCase();
       
       // Determine if user is staff based on email domain
-      const isStaff = email.endsWith('@morelandestate.co.uk') || email.endsWith('@mnninsure.com');
+      const isStaff = normalizedEmail.endsWith('@morelandestate.co.uk') || normalizedEmail.endsWith('@mnninsure.com');
+      
+      // Get or create user to avoid deadlock
+      const user = await storage.getOrCreateUser(normalizedEmail);
       
       res.status(200).json({
         exists: !!user,
@@ -55,14 +60,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { email, phone } = z.object({
         email: z.string().email(),
-        phone: z.string().min(10),
+        phone: z.string().min(10).regex(/^[0-9+\s\-()]+$/, "Phone number can only contain digits, +, spaces, hyphens, and parentheses"),
       }).parse(req.body);
+      
+      // Normalize phone number - remove spaces, hyphens, parentheses
+      const normalizedPhone = phone.replace(/[\s\-()]/g, '');
+      
+      // Validate that it's a reasonable phone number (10-15 digits optionally starting with +)
+      if (!/^\+?\d{10,15}$/.test(normalizedPhone)) {
+        res.status(400).json({ error: "Invalid phone number format" });
+        return;
+      }
       
       // Get or create user
       const user = await storage.getOrCreateUser(email.toLowerCase());
       
       // Update phone number
-      await storage.updateUserPhone(email.toLowerCase(), phone);
+      await storage.updateUserPhone(email.toLowerCase(), normalizedPhone);
       
       res.status(200).json({ message: "Phone number registered successfully" });
     } catch (error: any) {
@@ -84,27 +98,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         deliveryMethod: z.enum(['email', 'sms']).optional().default('email'),
       }).parse(req.body);
       
+      const normalizedEmail = email.toLowerCase();
+      
       // If SMS delivery requested, check if user has a phone number
       let finalDeliveryMethod: 'email' | 'sms' = deliveryMethod || 'email';
       
       if (deliveryMethod === 'sms') {
-        const user = await storage.getUserByEmail(email.toLowerCase());
+        const user = await storage.getUserByEmail(normalizedEmail);
         if (!user?.phone) {
           res.status(400).json({ error: "No phone number registered for SMS delivery" });
           return;
         }
       }
       
-      // Generate verification code
-      const { code, expiresAt } = await storage.createVerificationCode(email.toLowerCase(), claimId, finalDeliveryMethod);
+      // Generate verification code with intended delivery method
+      const { code, expiresAt } = await storage.createVerificationCode(normalizedEmail, claimId, finalDeliveryMethod);
       
       // Send verification code via chosen method
       if (finalDeliveryMethod === 'sms') {
-        const user = await storage.getUserByEmail(email.toLowerCase());
+        const user = await storage.getUserByEmail(normalizedEmail);
         if (user?.phone) {
           const result = await sendVerificationCodeSMS(user.phone, code);
           if (!result.success) {
-            // Fall back to email if SMS fails
+            // Fall back to email if SMS fails - update delivery method in DB
+            await db.update(verificationCodes)
+              .set({ deliveryMethod: 'email' })
+              .where(and(
+                eq(verificationCodes.email, normalizedEmail),
+                eq(verificationCodes.code, code)
+              ));
+            
             await sendVerificationCodeEmail(email, code);
             res.status(200).json({
               message: "SMS failed, verification code sent to your email",
