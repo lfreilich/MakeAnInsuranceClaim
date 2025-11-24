@@ -113,6 +113,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update insurer submission details (admin endpoint)
+  app.patch("/api/claims/:id/insurer-details", async (req: Request, res: Response) => {
+    try {
+      const claimId = parseInt(req.params.id);
+      if (isNaN(claimId)) {
+        res.status(400).json({ error: "Invalid claim ID" });
+        return;
+      }
+
+      const { insurerClaimRef, insurerSubmittedAt, insurerResponseDate, userId } = req.body;
+
+      const updates: any = {};
+      if (insurerClaimRef !== undefined) updates.insurerClaimRef = insurerClaimRef;
+      if (insurerSubmittedAt !== undefined) updates.insurerSubmittedAt = insurerSubmittedAt ? new Date(insurerSubmittedAt) : null;
+      if (insurerResponseDate !== undefined) updates.insurerResponseDate = insurerResponseDate ? new Date(insurerResponseDate) : null;
+
+      const updatedClaim = await storage.updateClaim(claimId, updates);
+      if (!updatedClaim) {
+        res.status(404).json({ error: "Claim not found" });
+        return;
+      }
+
+      // Create audit log for insurer submission
+      if (userId && insurerSubmittedAt) {
+        await storage.createAuditLog({
+          claimId,
+          userId: parseInt(userId),
+          action: 'insurer_submitted',
+          entityType: 'claim',
+          entityId: claimId,
+          changes: updates,
+        });
+      }
+
+      res.json(updatedClaim);
+    } catch (error: any) {
+      console.error("Update insurer details error:", error);
+      res.status(500).json({ error: error.message || "Failed to update insurer details" });
+    }
+  });
+
   // Get presigned URL for file upload
   app.post("/api/objects/upload", async (req: Request, res: Response) => {
     try {
