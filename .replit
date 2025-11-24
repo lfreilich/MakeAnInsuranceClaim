@@ -14,6 +14,14 @@ run = ["npm", "run", "start"]
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 24678
+externalPort = 3000
+
+[[ports]]
+localPort = 37157
+externalPort = 3001
+
 [env]
 PORT = "5000"
 
@@ -37,3 +45,6 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[agent]
+integrations = ["javascript_openai_ai_integrations:1.0.0", "javascript_database:1.0.0", "javascript_object_storage:1.0.0"]

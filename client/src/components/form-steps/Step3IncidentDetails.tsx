@@ -1,0 +1,198 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { step3Schema, type Step3Data } from "@shared/schema";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ChevronRight, ChevronLeft, Calendar as CalendarIcon, Sparkles } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { AIWritingAssistant } from "../AIWritingAssistant";
+
+interface Step3IncidentDetailsProps {
+  defaultValues: Partial<Step3Data>;
+  onNext: (data: Step3Data) => void;
+  onBack: () => void;
+}
+
+export function Step3IncidentDetails({ defaultValues, onNext, onBack }: Step3IncidentDetailsProps) {
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  
+  const form = useForm<Step3Data>({
+    resolver: zodResolver(step3Schema),
+    defaultValues: {
+      incidentDate: defaultValues.incidentDate ? new Date(defaultValues.incidentDate) : new Date(),
+      incidentDescription: defaultValues.incidentDescription || '',
+      incidentType: defaultValues.incidentType || 'building_damage',
+    },
+  });
+
+  const incidentDate = form.watch("incidentDate");
+  const incidentDescription = form.watch("incidentDescription");
+  
+  const daysSinceIncident = incidentDate 
+    ? Math.floor((new Date().getTime() - new Date(incidentDate).getTime()) / (1000 * 60 * 60 * 24))
+    : 0;
+  const isWithin60Days = daysSinceIncident <= 60;
+
+  const handleAIEnhance = (enhancedText: string) => {
+    form.setValue("incidentDescription", enhancedText);
+  };
+
+  const onSubmit = (data: Step3Data) => {
+    onNext(data);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold mb-2">Incident Details</h2>
+        <p className="text-muted-foreground">
+          Describe what happened and when the incident occurred.
+        </p>
+      </div>
+
+      {!isWithin60Days && incidentDate && (
+        <Alert variant="destructive">
+          <AlertTriangle className="w-4 h-4" />
+          <AlertDescription>
+            <strong>Warning:</strong> Claims must be submitted within 60 days of the incident. 
+            Your incident date is {daysSinceIncident} days ago. Late submissions may not be accepted.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <FormField
+            control={form.control}
+            name="incidentDate"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Date of Incident *</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                        data-testid="button-select-date"
+                      >
+                        {field.value ? (
+                          format(field.value, "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormDescription className="text-xs">
+                  When did the damage or incident occur?
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="incidentType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Type of Incident *</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger data-testid="select-incident-type">
+                      <SelectValue placeholder="Select incident type" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="building_damage">Building Damage</SelectItem>
+                    <SelectItem value="theft">Theft</SelectItem>
+                    <SelectItem value="vandalism">Vandalism</SelectItem>
+                    <SelectItem value="sublet">Subletting Issue</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="incidentDescription"
+            render={({ field }) => (
+              <FormItem>
+                <div className="flex items-center justify-between">
+                  <FormLabel>Incident Description *</FormLabel>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAIAssistant(true)}
+                    disabled={!incidentDescription.trim()}
+                    className="text-purple-600 border-purple-200 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-800 dark:hover:bg-purple-950"
+                    data-testid="button-ai-enhance"
+                  >
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Enhance with AI
+                  </Button>
+                </div>
+                <FormControl>
+                  <Textarea
+                    placeholder="Describe what happened in detail. Include the cause, extent of damage, and any immediate actions taken. Minimum 50 characters required."
+                    className="min-h-[150px] resize-y"
+                    {...field}
+                    data-testid="textarea-incident-description"
+                  />
+                </FormControl>
+                <FormDescription className="text-xs">
+                  Provide as much detail as possible (minimum 50 characters)
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="flex justify-between pt-4">
+            <Button type="button" variant="outline" onClick={onBack} data-testid="button-back-step3">
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+            <Button type="submit" size="lg" data-testid="button-next-step3">
+              Next Step
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </form>
+      </Form>
+
+      <AIWritingAssistant
+        open={showAIAssistant}
+        onOpenChange={setShowAIAssistant}
+        originalText={incidentDescription}
+        onAccept={handleAIEnhance}
+      />
+    </div>
+  );
+}

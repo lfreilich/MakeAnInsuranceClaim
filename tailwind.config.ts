@@ -11,7 +11,7 @@ export default {
         sm: ".1875rem", /* 3px */
       },
       colors: {
-        // Flat / base colors (regular buttons)
+        // Moreland Estate Management color scheme - Professional blue and slate
         background: "hsl(var(--background) / <alpha-value>)",
         foreground: "hsl(var(--foreground) / <alpha-value>)",
         border: "hsl(var(--border) / <alpha-value>)",
@@ -81,9 +81,22 @@ export default {
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
         },
+        // Custom colors for insurance claim portal
+        warning: {
+          DEFAULT: "hsl(38 92% 50% / <alpha-value>)", // Orange for warnings
+          foreground: "hsl(0 0% 100% / <alpha-value>)",
+        },
+        success: {
+          DEFAULT: "hsl(142 76% 36% / <alpha-value>)", // Green for success
+          foreground: "hsl(0 0% 100% / <alpha-value>)",
+        },
+        info: {
+          DEFAULT: "hsl(214 84% 56% / <alpha-value>)", // Blue for info
+          foreground: "hsl(0 0% 100% / <alpha-value>)",
+        },
       },
       fontFamily: {
-        sans: ["var(--font-sans)"],
+        sans: ["Inter", "var(--font-sans)"],
         serif: ["var(--font-serif)"],
         mono: ["var(--font-mono)"],
       },
@@ -96,10 +109,20 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "fade-in": {
+          from: { opacity: "0" },
+          to: { opacity: "1" },
+        },
+        "scale-in": {
+          from: { transform: "scale(0)" },
+          to: { transform: "scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fade-in 0.3s ease-out",
+        "scale-in": "scale-in 0.3s ease-out",
       },
     },
   },
