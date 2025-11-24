@@ -122,6 +122,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Chimnie API - Address autocomplete
+  app.get("/api/address/search", async (req: Request, res: Response) => {
+    try {
+      const query = req.query.q as string;
+      if (!query || query.length < 3) {
+        res.status(400).json({ error: "Query must be at least 3 characters" });
+        return;
+      }
+
+      const apiKey = process.env.CHIMNIE_API_KEY;
+      if (!apiKey) {
+        console.warn("CHIMNIE_API_KEY not configured, address autocomplete disabled");
+        res.status(503).json({ error: "Address autocomplete service not configured" });
+        return;
+      }
+
+      // Call Chimnie API for address autocomplete
+      const response = await fetch(
+        `https://api.chimnie.com/v1/address/search?q=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Accept': 'application/json',
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Chimnie API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      console.error("Address search error:", error);
+      res.status(500).json({
+        error: error.message || "Failed to search addresses",
+      });
+    }
+  });
+
   // AI enhancement endpoint
   app.post("/api/ai/enhance-description", async (req: Request, res: Response) => {
     try {
