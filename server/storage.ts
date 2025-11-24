@@ -588,10 +588,12 @@ export class DatabaseStorage implements IStorage {
     role: 'staff' | 'tenant' | 'assessor' | 'none';
     claimAccess: number[];
   }> {
-    const emailLower = email.toLowerCase();
+    const emailLower = email.toLowerCase().trim();
+    console.log(`[getUserAccessLevel] Checking access for email: ${emailLower}`);
 
     // Check if staff domain (@mnninsure.com or @morelandestate.co.uk)
     if (emailLower.endsWith('@mnninsure.com') || emailLower.endsWith('@morelandestate.co.uk')) {
+      console.log(`[getUserAccessLevel] User is staff`);
       return { role: 'staff', claimAccess: [] };
     }
 
@@ -610,26 +612,11 @@ export class DatabaseStorage implements IStorage {
         .where(eq(claims.lossAssessorId, assessor.id));
       
       const claimIds = assignedClaims.map(c => c.id);
+      console.log(`[getUserAccessLevel] User is assessor with ${claimIds.length} assigned claims:`, claimIds);
       return { 
         role: 'assessor', 
         claimAccess: claimIds 
       };
-    }
-
-    // Check if tenant (claimant)
-    if (claimId) {
-      const [claim] = await db
-        .select()
-        .from(claims)
-        .where(eq(claims.id, claimId))
-        .limit(1);
-
-      if (claim && claim.claimantEmail.toLowerCase() === emailLower) {
-        return { 
-          role: 'tenant', 
-          claimAccess: [claimId] 
-        };
-      }
     }
 
     // Check all claims for this email as claimant
@@ -638,14 +625,18 @@ export class DatabaseStorage implements IStorage {
       .from(claims)
       .where(eq(claims.claimantEmail, emailLower));
 
+    console.log(`[getUserAccessLevel] Found ${userClaims.length} claims for tenant email ${emailLower}`);
+    
     if (userClaims.length > 0) {
       const claimIds = userClaims.map(c => c.id);
+      console.log(`[getUserAccessLevel] User is tenant with claim IDs:`, claimIds);
       return { 
         role: 'tenant', 
         claimAccess: claimIds 
       };
     }
 
+    console.log(`[getUserAccessLevel] No access found for email ${emailLower}, returning role: none`);
     return { role: 'none', claimAccess: [] };
   }
 
