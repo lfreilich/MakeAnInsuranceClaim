@@ -6,6 +6,7 @@ import {
   auditLogs,
   claimStatusTransitions,
   claimNotes,
+  lossAssessors,
   type Claim, 
   type InsertClaim,
   type User,
@@ -18,6 +19,8 @@ import {
   type InsertClaimStatusTransition,
   type ClaimNote,
   type InsertClaimNote,
+  type LossAssessor,
+  type InsertLossAssessor,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -56,6 +59,14 @@ export interface IStorage {
   getClaimNotes(claimId: number): Promise<ClaimNote[]>;
   updateNote(id: number, updates: Partial<ClaimNote>): Promise<ClaimNote | undefined>;
   deleteNote(id: number): Promise<boolean>;
+  
+  // Loss Assessor operations
+  createLossAssessor(assessor: Omit<InsertLossAssessor, 'id' | 'createdAt'>): Promise<LossAssessor>;
+  getLossAssessor(id: number): Promise<LossAssessor | undefined>;
+  getAllLossAssessors(): Promise<LossAssessor[]>;
+  updateLossAssessor(id: number, updates: Partial<LossAssessor>): Promise<LossAssessor | undefined>;
+  deleteLossAssessor(id: number): Promise<boolean>;
+  assignLossAssessorToClaim(claimId: number, assessorId: number | null, userId?: number): Promise<Claim | undefined>;
 }
 
 // Generate a unique claim reference number
@@ -263,6 +274,63 @@ export class DatabaseStorage implements IStorage {
   async deleteNote(id: number): Promise<boolean> {
     const result = await db.delete(claimNotes).where(eq(claimNotes.id, id));
     return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  // Loss Assessor operations
+  async createLossAssessor(assessorData: Omit<InsertLossAssessor, 'id' | 'createdAt'>): Promise<LossAssessor> {
+    const [assessor] = await db.insert(lossAssessors).values(assessorData as any).returning();
+    return assessor;
+  }
+
+  async getLossAssessor(id: number): Promise<LossAssessor | undefined> {
+    const [assessor] = await db.select().from(lossAssessors).where(eq(lossAssessors.id, id));
+    return assessor;
+  }
+
+  async getAllLossAssessors(): Promise<LossAssessor[]> {
+    return await db
+      .select()
+      .from(lossAssessors)
+      .orderBy(desc(lossAssessors.createdAt));
+  }
+
+  async updateLossAssessor(id: number, updates: Partial<LossAssessor>): Promise<LossAssessor | undefined> {
+    const [updatedAssessor] = await db
+      .update(lossAssessors)
+      .set(updates)
+      .where(eq(lossAssessors.id, id))
+      .returning();
+    return updatedAssessor || undefined;
+  }
+
+  async deleteLossAssessor(id: number): Promise<boolean> {
+    const result = await db.delete(lossAssessors).where(eq(lossAssessors.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
+  }
+
+  async assignLossAssessorToClaim(claimId: number, assessorId: number | null, userId?: number): Promise<Claim | undefined> {
+    const [updatedClaim] = await db
+      .update(claims)
+      .set({ 
+        lossAssessorId: assessorId,
+        lastUpdatedAt: new Date(),
+      })
+      .where(eq(claims.id, claimId))
+      .returning();
+
+    if (updatedClaim && userId) {
+      // Create audit log for assessor assignment
+      await this.createAuditLog({
+        claimId,
+        userId,
+        action: assessorId ? 'loss_assessor_assigned' : 'loss_assessor_removed',
+        entityType: 'claim',
+        entityId: claimId,
+        changes: { lossAssessorId: assessorId },
+      });
+    }
+
+    return updatedClaim || undefined;
   }
 }
 
