@@ -347,8 +347,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Payment operations
-  async createPayment(paymentData: Omit<InsertPayment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Payment> {
+  async createPayment(
+    paymentData: Omit<InsertPayment, 'id' | 'createdAt' | 'updatedAt'>, 
+    userId?: number
+  ): Promise<Payment> {
+    // Validate amount - reject NaN, negative, or zero
+    if (!paymentData.amount || isNaN(paymentData.amount) || paymentData.amount <= 0) {
+      throw new Error('Payment amount must be a positive number');
+    }
+
     const [payment] = await db.insert(payments).values(paymentData as any).returning();
+    
+    // Create audit log for payment creation
+    if (userId) {
+      await this.createAuditLog({
+        claimId: payment.claimId,
+        userId,
+        action: 'payment_created',
+        entityType: 'payment',
+        entityId: payment.id,
+        changes: {
+          amount: payment.amount,
+          paymentType: payment.paymentType,
+          status: payment.status,
+        },
+      });
+    }
+    
     return payment;
   }
 
@@ -378,7 +403,8 @@ export class DatabaseStorage implements IStorage {
     id: number, 
     status: string, 
     paidAt?: Date, 
-    transactionReference?: string
+    transactionReference?: string,
+    userId?: number
   ): Promise<Payment | undefined> {
     const updates: Partial<Payment> = {
       status,
@@ -393,6 +419,21 @@ export class DatabaseStorage implements IStorage {
       .set(updates)
       .where(eq(payments.id, id))
       .returning();
+    
+    // Create audit log for payment status update
+    if (updatedPayment && userId) {
+      await this.createAuditLog({
+        claimId: updatedPayment.claimId,
+        userId,
+        action: 'payment_status_updated',
+        entityType: 'payment',
+        entityId: updatedPayment.id,
+        changes: {
+          status,
+          ...(transactionReference && { transactionReference }),
+        },
+      });
+    }
     
     return updatedPayment || undefined;
   }

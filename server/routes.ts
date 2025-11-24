@@ -885,7 +885,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         recipientEmail,
         status: "pending",
         createdBy: userId ? parseInt(userId) : null,
-      });
+      }, userId ? parseInt(userId) : undefined);
 
       res.status(201).json(payment);
     } catch (error: any) {
