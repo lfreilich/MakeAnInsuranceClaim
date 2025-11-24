@@ -565,6 +565,201 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== LOSS ASSESSOR ENDPOINTS ==========
+
+  // Get all loss assessors
+  app.get("/api/loss-assessors", async (req: Request, res: Response) => {
+    try {
+      const assessors = await storage.getAllLossAssessors();
+      res.json(assessors);
+    } catch (error: any) {
+      console.error("Get loss assessors error:", error);
+      res.status(500).json({ error: error.message || "Failed to retrieve loss assessors" });
+    }
+  });
+
+  // Get a single loss assessor
+  app.get("/api/loss-assessors/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        res.status(400).json({ error: "Invalid assessor ID" });
+        return;
+      }
+
+      const assessor = await storage.getLossAssessor(id);
+      
+      if (!assessor) {
+        res.status(404).json({ error: "Loss assessor not found" });
+        return;
+      }
+
+      res.json(assessor);
+    } catch (error: any) {
+      console.error("Get loss assessor error:", error);
+      res.status(500).json({ error: error.message || "Failed to retrieve loss assessor" });
+    }
+  });
+
+  // Create a new loss assessor
+  app.post("/api/loss-assessors", async (req: Request, res: Response) => {
+    try {
+      const { companyName, contactName, email, phone, specializations, address, notes } = req.body;
+
+      if (!companyName || !contactName || !email || !phone) {
+        res.status(400).json({ error: "companyName, contactName, email, and phone are required" });
+        return;
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        res.status(400).json({ error: "Invalid email format" });
+        return;
+      }
+
+      const assessor = await storage.createLossAssessor({
+        companyName,
+        contactName,
+        email,
+        phone,
+        specializations: Array.isArray(specializations) ? specializations : [],
+        address: address || null,
+        notes: notes || null,
+        active: true,
+      });
+
+      res.status(201).json(assessor);
+    } catch (error: any) {
+      console.error("Create loss assessor error:", error);
+      res.status(500).json({ error: error.message || "Failed to create loss assessor" });
+    }
+  });
+
+  // Update a loss assessor
+  app.patch("/api/loss-assessors/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        res.status(400).json({ error: "Invalid assessor ID" });
+        return;
+      }
+
+      const updates = req.body;
+
+      // Validate email if provided
+      if (updates.email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(updates.email)) {
+          res.status(400).json({ error: "Invalid email format" });
+          return;
+        }
+      }
+
+      // Ensure specializations is an array if provided
+      if (updates.specializations && !Array.isArray(updates.specializations)) {
+        res.status(400).json({ error: "Specializations must be an array" });
+        return;
+      }
+
+      const updatedAssessor = await storage.updateLossAssessor(id, updates);
+      if (!updatedAssessor) {
+        res.status(404).json({ error: "Loss assessor not found" });
+        return;
+      }
+
+      res.json(updatedAssessor);
+    } catch (error: any) {
+      console.error("Update loss assessor error:", error);
+      res.status(500).json({ error: error.message || "Failed to update loss assessor" });
+    }
+  });
+
+  // Delete a loss assessor
+  app.delete("/api/loss-assessors/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        res.status(400).json({ error: "Invalid assessor ID" });
+        return;
+      }
+
+      const success = await storage.deleteLossAssessor(id);
+      
+      if (!success) {
+        res.status(404).json({ error: "Loss assessor not found" });
+        return;
+      }
+
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Delete loss assessor error:", error);
+      res.status(500).json({ error: error.message || "Failed to delete loss assessor" });
+    }
+  });
+
+  // Assign loss assessor to claim
+  app.patch("/api/claims/:id/assign-assessor", async (req: Request, res: Response) => {
+    try {
+      const claimId = parseInt(req.params.id);
+      if (isNaN(claimId)) {
+        res.status(400).json({ error: "Invalid claim ID" });
+        return;
+      }
+
+      // Verify claim exists
+      const claim = await storage.getClaim(claimId);
+      if (!claim) {
+        res.status(404).json({ error: "Claim not found" });
+        return;
+      }
+
+      const { assessorId, userId } = req.body;
+
+      // Parse and validate assessorId
+      let validatedAssessorId: number | null = null;
+      if (assessorId !== null && assessorId !== undefined) {
+        const parsed = parseInt(assessorId);
+        if (isNaN(parsed)) {
+          res.status(400).json({ error: "Invalid assessor ID" });
+          return;
+        }
+        
+        // Verify assessor exists
+        const assessor = await storage.getLossAssessor(parsed);
+        if (!assessor) {
+          res.status(404).json({ error: "Loss assessor not found" });
+          return;
+        }
+        validatedAssessorId = parsed;
+      }
+
+      // Parse userId if provided
+      const validatedUserId = userId ? parseInt(userId) : undefined;
+      if (userId && isNaN(validatedUserId!)) {
+        res.status(400).json({ error: "Invalid user ID" });
+        return;
+      }
+
+      const updatedClaim = await storage.assignLossAssessorToClaim(
+        claimId,
+        validatedAssessorId,
+        validatedUserId
+      );
+
+      // This should not fail since we already verified claim exists
+      if (!updatedClaim) {
+        res.status(500).json({ error: "Failed to update claim" });
+        return;
+      }
+
+      res.json(updatedClaim);
+    } catch (error: any) {
+      console.error("Assign loss assessor error:", error);
+      res.status(500).json({ error: error.message || "Failed to assign loss assessor" });
+    }
+  });
+
   // Return the HTTP server
   return createServer(app);
 }

@@ -13,6 +13,10 @@ A web-based insurance claim submission portal for Moreland Estate Management tha
 - Digital signature collection
 - Automated confirmation emails
 - Claim reference number generation
+- Loss assessor management and assignment
+- Comprehensive audit logging and notes system
+- Insurance policy management (multiple policies per building)
+- User assignment and workflow tracking
 
 ## User Preferences
 
