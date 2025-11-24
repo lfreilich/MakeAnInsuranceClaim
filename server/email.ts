@@ -1,42 +1,51 @@
 // Email service for sending claim notifications
-import nodemailer from "nodemailer";
+import { Resend } from 'resend';
 import type { Claim } from "@shared/schema";
 
-// Email configuration
-const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
-const SMTP_PORT = parseInt(process.env.SMTP_PORT || "587");
-const SMTP_USER = process.env.SMTP_USER;
-const SMTP_PASS = process.env.SMTP_PASS;
-const FROM_EMAIL = process.env.FROM_EMAIL || "noreply@morelandestate.co.uk";
 const CLAIMS_EMAIL = "claims@morelandestate.co.uk";
 
-let transporter: nodemailer.Transporter | null = null;
+let connectionSettings: any;
 
-function getTransporter(): nodemailer.Transporter {
-  if (!transporter) {
-    if (!SMTP_USER || !SMTP_PASS) {
-      console.warn("SMTP credentials not configured. Email sending is disabled.");
-      // Return a test transporter for development
-      transporter = nodemailer.createTransport({
-        jsonTransport: true
-      });
-    } else {
-      transporter = nodemailer.createTransport({
-        host: SMTP_HOST,
-        port: SMTP_PORT,
-        secure: SMTP_PORT === 465,
-        auth: {
-          user: SMTP_USER,
-          pass: SMTP_PASS,
-        },
-      });
-    }
+async function getCredentials() {
+  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
+  const xReplitToken = process.env.REPL_IDENTITY 
+    ? 'repl ' + process.env.REPL_IDENTITY 
+    : process.env.WEB_REPL_RENEWAL 
+    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
+    : null;
+
+  if (!xReplitToken) {
+    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
   }
-  return transporter;
+
+  connectionSettings = await fetch(
+    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=resend',
+    {
+      headers: {
+        'Accept': 'application/json',
+        'X_REPLIT_TOKEN': xReplitToken
+      }
+    }
+  ).then(res => res.json()).then(data => data.items?.[0]);
+
+  if (!connectionSettings || (!connectionSettings.settings.api_key)) {
+    throw new Error('Resend not connected');
+  }
+  return {apiKey: connectionSettings.settings.api_key, fromEmail: connectionSettings.settings.from_email};
+}
+
+// WARNING: Never cache this client.
+// Access tokens expire, so a new client must be created each time.
+async function getUncachableResendClient() {
+  const credentials = await getCredentials();
+  return {
+    client: new Resend(credentials.apiKey),
+    fromEmail: connectionSettings.settings.from_email || 'noreply@morelandestate.co.uk'
+  };
 }
 
 export async function sendClaimConfirmationEmail(claim: Claim): Promise<void> {
-  const transporter = getTransporter();
+  const { client: resend, fromEmail } = await getUncachableResendClient();
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -104,16 +113,16 @@ export async function sendClaimConfirmationEmail(claim: Claim): Promise<void> {
 
   try {
     // Send to claimant
-    await transporter.sendMail({
-      from: FROM_EMAIL,
+    await resend.emails.send({
+      from: fromEmail,
       to: claim.claimantEmail,
       subject: `Claim Submitted - Reference: ${claim.referenceNumber}`,
       html: htmlContent,
     });
 
     // Send internal notification
-    await transporter.sendMail({
-      from: FROM_EMAIL,
+    await resend.emails.send({
+      from: fromEmail,
       to: CLAIMS_EMAIL,
       subject: `New Claim Submitted - ${claim.referenceNumber}`,
       html: `
