@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { ObjectStorageService } from "./objectStorage";
 import { enhanceIncidentDescription } from "./openai";
 import { sendClaimConfirmationEmail, sendVerificationCodeEmail } from "./email";
+import { notifyClaimCreated, notifyClaimUpdated, notifyClaimStatusChanged } from "./notifications";
 import { 
   insertClaimSchema, 
   type InsertClaim,
@@ -126,6 +127,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Failed to send confirmation email:", error);
       });
 
+      // Send notifications to staff and claimant (non-blocking)
+      notifyClaimCreated(claim).catch((error) => {
+        console.error("Failed to send claim notifications:", error);
+      });
+
       res.status(201).json({
         id: claim.id,
         referenceNumber: claim.referenceNumber,
@@ -207,11 +213,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
+      // Get current claim to capture old status
+      const currentClaim = await storage.getClaim(claimId);
+      if (!currentClaim) {
+        res.status(404).json({ error: "Claim not found" });
+        return;
+      }
+
       const updatedClaim = await storage.updateClaimStatus(claimId, status);
       if (!updatedClaim) {
         res.status(404).json({ error: "Claim not found" });
         return;
       }
+
+      // Send notifications (non-blocking)
+      notifyClaimStatusChanged(updatedClaim, currentClaim.status, status).catch((error) => {
+        console.error("Failed to send status change notifications:", error);
+      });
 
       res.json(updatedClaim);
     } catch (error: any) {
