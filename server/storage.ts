@@ -7,6 +7,7 @@ import {
   claimStatusTransitions,
   claimNotes,
   lossAssessors,
+  payments,
   type Claim, 
   type InsertClaim,
   type User,
@@ -21,6 +22,8 @@ import {
   type InsertClaimNote,
   type LossAssessor,
   type InsertLossAssessor,
+  type Payment,
+  type InsertPayment,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -67,6 +70,16 @@ export interface IStorage {
   updateLossAssessor(id: number, updates: Partial<LossAssessor>): Promise<LossAssessor | undefined>;
   deleteLossAssessor(id: number): Promise<boolean>;
   assignLossAssessorToClaim(claimId: number, assessorId: number | null, userId?: number): Promise<Claim | undefined>;
+  
+  // Payment operations
+  createPayment(payment: Omit<InsertPayment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Payment>;
+  getPayment(id: number): Promise<Payment | undefined>;
+  getClaimPayments(claimId: number): Promise<Payment[]>;
+  updatePayment(id: number, updates: Partial<Payment>): Promise<Payment | undefined>;
+  updatePaymentStatus(id: number, status: string, paidAt?: Date, transactionReference?: string): Promise<Payment | undefined>;
+  
+  // Claim closure operations
+  closeClaim(claimId: number, closeReason: string, userId?: number, finalNotes?: string): Promise<Claim | undefined>;
 }
 
 // Generate a unique claim reference number
@@ -331,6 +344,119 @@ export class DatabaseStorage implements IStorage {
     }
 
     return updatedClaim || undefined;
+  }
+
+  // Payment operations
+  async createPayment(paymentData: Omit<InsertPayment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Payment> {
+    const [payment] = await db.insert(payments).values(paymentData as any).returning();
+    return payment;
+  }
+
+  async getPayment(id: number): Promise<Payment | undefined> {
+    const [payment] = await db.select().from(payments).where(eq(payments.id, id));
+    return payment || undefined;
+  }
+
+  async getClaimPayments(claimId: number): Promise<Payment[]> {
+    return await db
+      .select()
+      .from(payments)
+      .where(eq(payments.claimId, claimId))
+      .orderBy(desc(payments.createdAt));
+  }
+
+  async updatePayment(id: number, updates: Partial<Payment>): Promise<Payment | undefined> {
+    const [updatedPayment] = await db
+      .update(payments)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(payments.id, id))
+      .returning();
+    return updatedPayment || undefined;
+  }
+
+  async updatePaymentStatus(
+    id: number, 
+    status: string, 
+    paidAt?: Date, 
+    transactionReference?: string
+  ): Promise<Payment | undefined> {
+    const updates: Partial<Payment> = {
+      status,
+      updatedAt: new Date(),
+    };
+    
+    if (paidAt) updates.paidAt = paidAt;
+    if (transactionReference) updates.transactionReference = transactionReference;
+    
+    const [updatedPayment] = await db
+      .update(payments)
+      .set(updates)
+      .where(eq(payments.id, id))
+      .returning();
+    
+    return updatedPayment || undefined;
+  }
+
+  // Claim closure operations
+  async closeClaim(
+    claimId: number, 
+    closeReason: string, 
+    userId?: number, 
+    finalNotes?: string
+  ): Promise<Claim | undefined> {
+    return await db.transaction(async (tx) => {
+      // Update claim with closure info
+      const [closedClaim] = await tx
+        .update(claims)
+        .set({
+          closedAt: new Date(),
+          closeReason,
+          status: 'closed',
+          lastUpdatedAt: new Date(),
+        })
+        .where(eq(claims.id, claimId))
+        .returning();
+
+      if (!closedClaim) return undefined;
+
+      // Create status transition record
+      await tx.insert(claimStatusTransitions).values({
+        claimId,
+        fromStatus: closedClaim.status,
+        toStatus: 'closed',
+        changedBy: userId || null,
+        reason: closeReason,
+      } as any);
+
+      // Create audit log for closure
+      if (userId) {
+        await tx.insert(auditLogs).values({
+          claimId,
+          userId,
+          action: 'claim_closed',
+          entityType: 'claim',
+          entityId: claimId,
+          changes: { 
+            closedAt: new Date(),
+            closeReason,
+            status: 'closed',
+          },
+        } as any);
+      }
+
+      // Add final notes if provided
+      if (finalNotes && userId) {
+        await tx.insert(claimNotes).values({
+          claimId,
+          authorUserId: userId,
+          noteType: 'general',
+          visibility: 'internal',
+          body: `Closure Notes: ${finalNotes}`,
+        } as any);
+      }
+
+      return closedClaim;
+    });
   }
 }
 
