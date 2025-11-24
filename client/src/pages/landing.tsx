@@ -3,7 +3,7 @@ import { Shield, Clock, FileCheck, Building2, Mail, Phone, AlertCircle } from "l
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import heroImage from "@assets/generated_images/luxury_apartment_building_hero.png";
-import logoImage from "@assets/generated_images/moreland_estate_management_logo.png";
+import logoImage from "@assets/MEM logo png_1763993340955.png";
 
 export default function LandingPage() {
   return (

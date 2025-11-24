@@ -14,7 +14,7 @@ import { Step7Uploads } from "../components/form-steps/Step7Uploads";
 import { Step8Declaration } from "../components/form-steps/Step8Declaration";
 import { apiRequest } from "@/lib/queryClient";
 import type { ClaimFormData } from "@shared/schema";
-import logoImage from "@assets/generated_images/moreland_estate_management_logo.png";
+import logoImage from "@assets/MEM logo png_1763993340955.png";
 import headerImage from "@assets/generated_images/modern_residential_building_header.png";
 import { useToast } from "@/hooks/use-toast";
 

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import successImage from "@assets/generated_images/elegant_residential_tower_success.png";
-import logoImage from "@assets/generated_images/moreland_estate_management_logo.png";
+import logoImage from "@assets/MEM logo png_1763993340955.png";
 
 export default function ClaimSuccess() {
   const { referenceNumber } = useParams<{ referenceNumber: string }>();
