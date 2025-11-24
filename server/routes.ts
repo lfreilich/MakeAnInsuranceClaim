@@ -5,7 +5,7 @@ import { storage } from "./storage";
 import { ObjectStorageService } from "./objectStorage";
 import { enhanceIncidentDescription } from "./openai";
 import { sendClaimConfirmationEmail, sendVerificationCodeEmail } from "./email";
-import { notifyClaimCreated, notifyClaimUpdated, notifyClaimStatusChanged } from "./notifications";
+import { notifyClaimCreated, notifyClaimUpdated, notifyClaimStatusChanged, sendVerificationCodeSMS } from "./notifications";
 import { 
   insertClaimSchema, 
   type InsertClaim,
@@ -23,25 +23,112 @@ import {
 const objectStorageService = new ObjectStorageService();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Authentication: Check user status (phone registered, staff status)
+  app.post("/api/auth/check-user", async (req: Request, res: Response) => {
+    try {
+      const { email } = z.object({ email: z.string().email() }).parse(req.body);
+      
+      // Check if user exists in users table
+      const user = await storage.getUserByEmail(email.toLowerCase());
+      
+      // Determine if user is staff based on email domain
+      const isStaff = email.endsWith('@morelandestate.co.uk') || email.endsWith('@mnninsure.com');
+      
+      res.status(200).json({
+        exists: !!user,
+        hasPhone: !!(user?.phone),
+        isStaff,
+        requiresPhoneRegistration: isStaff && !user?.phone,
+      });
+    } catch (error: any) {
+      console.error("Check user error:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Invalid email address", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Failed to check user" });
+      }
+    }
+  });
+
+  // Authentication: Register phone number
+  app.post("/api/auth/register-phone", async (req: Request, res: Response) => {
+    try {
+      const { email, phone } = z.object({
+        email: z.string().email(),
+        phone: z.string().min(10),
+      }).parse(req.body);
+      
+      // Get or create user
+      const user = await storage.getOrCreateUser(email.toLowerCase());
+      
+      // Update phone number
+      await storage.updateUserPhone(email.toLowerCase(), phone);
+      
+      res.status(200).json({ message: "Phone number registered successfully" });
+    } catch (error: any) {
+      console.error("Register phone error:", error);
+      if (error instanceof z.ZodError) {
+        res.status(400).json({ error: "Invalid request", details: error.errors });
+      } else {
+        res.status(500).json({ error: "Failed to register phone number" });
+      }
+    }
+  });
+
   // Authentication: Request verification code
   app.post("/api/auth/request-code", async (req: Request, res: Response) => {
     try {
-      const { email, claimId } = requestCodeSchema.parse(req.body);
+      const { email, claimId, deliveryMethod } = z.object({
+        email: z.string().email(),
+        claimId: z.number().optional(),
+        deliveryMethod: z.enum(['email', 'sms']).optional().default('email'),
+      }).parse(req.body);
+      
+      // If SMS delivery requested, check if user has a phone number
+      let finalDeliveryMethod: 'email' | 'sms' = deliveryMethod || 'email';
+      
+      if (deliveryMethod === 'sms') {
+        const user = await storage.getUserByEmail(email.toLowerCase());
+        if (!user?.phone) {
+          res.status(400).json({ error: "No phone number registered for SMS delivery" });
+          return;
+        }
+      }
       
       // Generate verification code
-      const { code, expiresAt } = await storage.createVerificationCode(email, claimId);
+      const { code, expiresAt } = await storage.createVerificationCode(email.toLowerCase(), claimId, finalDeliveryMethod);
       
-      // Send verification code via email
-      await sendVerificationCodeEmail(email, code);
+      // Send verification code via chosen method
+      if (finalDeliveryMethod === 'sms') {
+        const user = await storage.getUserByEmail(email.toLowerCase());
+        if (user?.phone) {
+          const result = await sendVerificationCodeSMS(user.phone, code);
+          if (!result.success) {
+            // Fall back to email if SMS fails
+            await sendVerificationCodeEmail(email, code);
+            res.status(200).json({
+              message: "SMS failed, verification code sent to your email",
+              expiresAt,
+              deliveryMethod: 'email',
+            });
+            return;
+          }
+        }
+      } else {
+        await sendVerificationCodeEmail(email, code);
+      }
       
       res.status(200).json({ 
-        message: "Verification code sent to your email",
+        message: finalDeliveryMethod === 'sms' 
+          ? "Verification code sent via SMS" 
+          : "Verification code sent to your email",
         expiresAt,
+        deliveryMethod: finalDeliveryMethod,
       });
     } catch (error: any) {
       console.error("Request code error:", error);
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: "Invalid email address", details: error.errors });
+        res.status(400).json({ error: "Invalid request", details: error.errors });
       } else {
         res.status(500).json({ error: "Failed to send verification code" });
       }

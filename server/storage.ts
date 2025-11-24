@@ -45,6 +45,8 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
+  updateUserPhone(email: string, phone: string): Promise<User | undefined>;
+  getOrCreateUser(email: string, name?: string): Promise<User>;
   
   // Policy operations
   createPolicy(policy: Omit<InsertInsurancePolicy, 'id' | 'createdAt'>): Promise<InsurancePolicy>;
@@ -83,7 +85,7 @@ export interface IStorage {
   updatePaymentStatus(id: number, status: string, paidAt?: Date, transactionReference?: string): Promise<Payment | undefined>;
   
   // Verification code operations
-  createVerificationCode(email: string, claimId?: number): Promise<{ code: string; expiresAt: Date }>;
+  createVerificationCode(email: string, claimId?: number, deliveryMethod?: 'email' | 'sms'): Promise<{ code: string; expiresAt: Date }>;
   verifyCode(email: string, code: string): Promise<boolean>;
   cleanupExpiredCodes(): Promise<void>;
   getUserAccessLevel(email: string, claimId?: number): Promise<{
@@ -210,6 +212,33 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).where(eq(users.active, true));
+  }
+
+  async updateUserPhone(email: string, phone: string): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ phone })
+      .where(eq(users.email, email))
+      .returning();
+    return updatedUser || undefined;
+  }
+
+  async getOrCreateUser(email: string, name?: string): Promise<User> {
+    // Try to get existing user
+    const existingUser = await this.getUserByEmail(email);
+    if (existingUser) {
+      return existingUser;
+    }
+
+    // Create new user if doesn't exist
+    const userData = {
+      email,
+      name: name || email.split('@')[0], // Use email prefix as default name
+      role: 'admin', // Default role
+      active: true,
+    };
+
+    return await this.createUser(userData);
   }
 
   // Policy operations
@@ -526,7 +555,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Verification code operations
-  async createVerificationCode(email: string, claimId?: number): Promise<{ code: string; expiresAt: Date }> {
+  async createVerificationCode(email: string, claimId?: number, deliveryMethod: 'email' | 'sms' = 'email'): Promise<{ code: string; expiresAt: Date }> {
     // Generate 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
@@ -542,6 +571,7 @@ export class DatabaseStorage implements IStorage {
     await db.insert(verificationCodes).values({
       email,
       code,
+      deliveryMethod,
       expiresAt,
       claimId: claimId || null,
       verified: false,

@@ -104,6 +104,14 @@ async function sendSMS(recipient: string, message: string): Promise<SMSResult> {
 }
 
 /**
+ * Send a verification code via SMS
+ */
+export async function sendVerificationCodeSMS(phone: string, code: string): Promise<SMSResult> {
+  const message = `Your Moreland Estate verification code is: ${code}. This code expires in 10 minutes.`;
+  return await sendSMS(phone, message);
+}
+
+/**
  * Send an email using Resend
  */
 async function sendEmail(to: string, subject: string, htmlContent: string): Promise<boolean> {

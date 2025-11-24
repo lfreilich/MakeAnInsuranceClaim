@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   replitUserId: varchar("replit_user_id", { length: 255 }).unique(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
+  phone: varchar("phone", { length: 50 }), // Phone number for SMS notifications
   role: varchar("role", { length: 50 }).notNull().default("admin"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -20,6 +21,7 @@ export const verificationCodes = pgTable("verification_codes", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 255 }).notNull(),
   code: varchar("code", { length: 10 }).notNull(),
+  deliveryMethod: varchar("delivery_method", { length: 10 }).notNull().default("email"), // "email" or "sms"
   expiresAt: timestamp("expires_at").notNull(),
   claimId: integer("claim_id"), // Optional: for claim-specific access
   verified: boolean("verified").notNull().default(false),
