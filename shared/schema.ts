@@ -15,6 +15,17 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
+// Email verification codes for passwordless authentication
+export const verificationCodes = pgTable("verification_codes", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 255 }).notNull(),
+  code: varchar("code", { length: 10 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  claimId: integer("claim_id"), // Optional: for claim-specific access
+  verified: boolean("verified").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // Insurance Policies table - multiple policies per building
 export const insurancePolicies = pgTable("insurance_policies", {
   id: serial("id").primaryKey(),
@@ -486,3 +497,22 @@ export const closeClaimSchema = z.object({
   finalNotes: z.string().optional(),
   finalSettlementAmount: z.number().optional(),
 });
+
+// Verification code validation schemas
+export const insertVerificationCodeSchema = createInsertSchema(verificationCodes).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const requestCodeSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  claimId: z.number().optional(), // For claim-specific access
+});
+
+export const verifyCodeSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  code: z.string().length(6, "Verification code must be 6 digits"),
+});
+
+export type InsertVerificationCode = z.infer<typeof insertVerificationCodeSchema>;
+export type VerificationCode = typeof verificationCodes.$inferSelect;

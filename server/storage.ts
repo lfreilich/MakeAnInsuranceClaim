@@ -8,6 +8,7 @@ import {
   claimNotes,
   lossAssessors,
   payments,
+  verificationCodes,
   type Claim, 
   type InsertClaim,
   type User,
@@ -24,6 +25,8 @@ import {
   type InsertLossAssessor,
   type Payment,
   type InsertPayment,
+  type VerificationCode,
+  type InsertVerificationCode,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -77,6 +80,15 @@ export interface IStorage {
   getClaimPayments(claimId: number): Promise<Payment[]>;
   updatePayment(id: number, updates: Partial<Payment>): Promise<Payment | undefined>;
   updatePaymentStatus(id: number, status: string, paidAt?: Date, transactionReference?: string): Promise<Payment | undefined>;
+  
+  // Verification code operations
+  createVerificationCode(email: string, claimId?: number): Promise<{ code: string; expiresAt: Date }>;
+  verifyCode(email: string, code: string): Promise<boolean>;
+  cleanupExpiredCodes(): Promise<void>;
+  getUserAccessLevel(email: string, claimId?: number): Promise<{
+    role: 'staff' | 'tenant' | 'assessor' | 'none';
+    claimAccess?: number[];
+  }>;
   
   // Claim closure operations
   closeClaim(claimId: number, closeReason: string, userId?: number, finalNotes?: string): Promise<Claim | undefined>;
@@ -498,6 +510,130 @@ export class DatabaseStorage implements IStorage {
 
       return closedClaim;
     });
+  }
+
+  // Verification code operations
+  async createVerificationCode(email: string, claimId?: number): Promise<{ code: string; expiresAt: Date }> {
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Delete any existing unverified codes for this email
+    await db.delete(verificationCodes)
+      .where(and(
+        eq(verificationCodes.email, email),
+        eq(verificationCodes.verified, false)
+      ));
+
+    // Create new verification code
+    await db.insert(verificationCodes).values({
+      email,
+      code,
+      expiresAt,
+      claimId: claimId || null,
+      verified: false,
+    } as any);
+
+    return { code, expiresAt };
+  }
+
+  async verifyCode(email: string, code: string): Promise<boolean> {
+    const [record] = await db
+      .select()
+      .from(verificationCodes)
+      .where(and(
+        eq(verificationCodes.email, email),
+        eq(verificationCodes.code, code),
+        eq(verificationCodes.verified, false)
+      ))
+      .limit(1);
+
+    if (!record) return false;
+
+    // Check if expired
+    if (new Date() > new Date(record.expiresAt)) {
+      await db.delete(verificationCodes).where(eq(verificationCodes.id, record.id));
+      return false;
+    }
+
+    // Mark as verified
+    await db.update(verificationCodes)
+      .set({ verified: true })
+      .where(eq(verificationCodes.id, record.id));
+
+    return true;
+  }
+
+  async cleanupExpiredCodes(): Promise<void> {
+    await db.delete(verificationCodes)
+      .where(and(
+        eq(verificationCodes.verified, false)
+      ));
+  }
+
+  async getUserAccessLevel(email: string, claimId?: number): Promise<{
+    role: 'staff' | 'tenant' | 'assessor' | 'none';
+    claimAccess?: number[];
+  }> {
+    const emailLower = email.toLowerCase();
+
+    // Check if staff domain (@mnninsure.com or @morelandestate.co.uk)
+    if (emailLower.endsWith('@mnninsure.com') || emailLower.endsWith('@morelandestate.co.uk')) {
+      return { role: 'staff' };
+    }
+
+    // Check if loss assessor
+    const [assessor] = await db
+      .select()
+      .from(lossAssessors)
+      .where(eq(lossAssessors.email, emailLower))
+      .limit(1);
+
+    if (assessor) {
+      // Get all claims assigned to this assessor
+      const assignedClaims = await db
+        .select({ id: claims.id })
+        .from(claims)
+        .where(eq(claims.lossAssessorId, assessor.id));
+      
+      const claimIds = assignedClaims.map(c => c.id);
+      return { 
+        role: 'assessor', 
+        claimAccess: claimIds 
+      };
+    }
+
+    // Check if tenant (claimant)
+    if (claimId) {
+      const [claim] = await db
+        .select()
+        .from(claims)
+        .where(eq(claims.id, claimId))
+        .limit(1);
+
+      if (claim && claim.claimantEmail.toLowerCase() === emailLower) {
+        return { 
+          role: 'tenant', 
+          claimAccess: [claimId] 
+        };
+      }
+    }
+
+    // Check all claims for this email as claimant
+    const userClaims = await db
+      .select({ id: claims.id })
+      .from(claims)
+      .where(eq(claims.claimantEmail, emailLower));
+
+    if (userClaims.length > 0) {
+      const claimIds = userClaims.map(c => c.id);
+      return { 
+        role: 'tenant', 
+        claimAccess: claimIds 
+      };
+    }
+
+    return { role: 'none' };
   }
 }
 
