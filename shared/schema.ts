@@ -124,15 +124,14 @@ export const insertClaimSchema = createInsertSchema(claims, {
 );
 
 // Step-by-step form schemas for frontend validation
-// TEMPORARY: Minimal validation for testing
 export const step1Schema = z.object({
-  claimantName: z.string().optional().default("Test User"),
-  claimantEmail: z.string().optional().default("test@example.com"),
-  claimantPhone: z.string().optional().default("07700000000"),
+  claimantName: z.string().min(2, "Name must be at least 2 characters"),
+  claimantEmail: z.string().email("Invalid email address"),
+  claimantPhone: z.string().min(10, "Phone number must be at least 10 characters"),
 });
 
 export const step2Schema = z.object({
-  propertyAddress: z.string().min(1, "Please select an address using the search"),
+  propertyAddress: z.string().min(10, "Please select an address using the search"),
   propertyBlock: z.string().optional(),
   propertyPlaceId: z.string().min(1, "Please select an address using the search"),
   propertyConstructionAge: z.string().optional(),
@@ -140,7 +139,9 @@ export const step2Schema = z.object({
 });
 
 export const step3Schema = z.object({
-  incidentDate: z.date().optional().default(new Date()),
+  incidentDate: z.date({
+    required_error: "Please select the date of the incident",
+  }),
   incidentType: z.enum([
     "fire",
     "lightning", 
@@ -158,29 +159,97 @@ export const step3Schema = z.object({
     "escape_of_oil",
     "impact_by_vehicle_or_animal",
     "leakage_of_oil_from_heating"
-  ]).optional().default("fire"),
-  incidentDescription: z.string().optional().default("Test incident description"),
+  ], {
+    required_error: "Please select the type of incident",
+  }),
+  incidentDescription: z.string().min(50, "Description must be at least 50 characters"),
 });
 
 export const step4Schema = z.object({
-  hasBuildingDamage: z.boolean().optional().default(false),
+  hasBuildingDamage: z.boolean(),
   buildingDamageDescription: z.string().optional(),
   buildingDamageAffectedAreas: z.string().optional(),
-});
+}).refine(
+  (data) => {
+    if (data.hasBuildingDamage) {
+      return data.buildingDamageDescription && data.buildingDamageDescription.length >= 20;
+    }
+    return true;
+  },
+  {
+    message: "Building damage description is required (minimum 20 characters)",
+    path: ["buildingDamageDescription"],
+  }
+);
 
 export const step5Schema = z.object({
-  hasTheft: z.boolean().optional().default(false),
+  hasTheft: z.boolean(),
   theftDescription: z.string().optional(),
-  theftPoliceReported: z.boolean().optional().default(false),
+  theftPoliceReported: z.boolean(),
   theftPoliceReference: z.string().optional(),
-});
+}).refine(
+  (data) => {
+    if (data.hasTheft) {
+      return data.theftDescription && data.theftDescription.length >= 20;
+    }
+    return true;
+  },
+  {
+    message: "Theft description is required (minimum 20 characters)",
+    path: ["theftDescription"],
+  }
+).refine(
+  (data) => {
+    if (data.hasTheft && data.theftPoliceReported) {
+      return data.theftPoliceReference && data.theftPoliceReference.length >= 5;
+    }
+    return true;
+  },
+  {
+    message: "Police reference number is required for reported theft",
+    path: ["theftPoliceReference"],
+  }
+);
 
 export const step6Schema = z.object({
-  isInvestmentProperty: z.boolean().optional().default(false),
+  isInvestmentProperty: z.boolean(),
   tenantName: z.string().optional(),
   tenantPhone: z.string().optional(),
   tenantEmail: z.string().optional(),
-});
+}).refine(
+  (data) => {
+    if (data.isInvestmentProperty) {
+      return data.tenantName && data.tenantName.length >= 2;
+    }
+    return true;
+  },
+  {
+    message: "Tenant name is required for investment properties",
+    path: ["tenantName"],
+  }
+).refine(
+  (data) => {
+    if (data.isInvestmentProperty) {
+      return data.tenantPhone && data.tenantPhone.length >= 10;
+    }
+    return true;
+  },
+  {
+    message: "Tenant phone number is required for investment properties",
+    path: ["tenantPhone"],
+  }
+).refine(
+  (data) => {
+    if (data.isInvestmentProperty) {
+      return data.tenantEmail && z.string().email().safeParse(data.tenantEmail).success;
+    }
+    return true;
+  },
+  {
+    message: "Valid tenant email is required for investment properties",
+    path: ["tenantEmail"],
+  }
+);
 
 export const step7Schema = z.object({
   damagePhotos: z.array(z.string()).optional().default([]),
@@ -192,11 +261,17 @@ export const step7Schema = z.object({
 });
 
 export const step8Schema = z.object({
-  signatureData: z.string().optional().default("test-signature"),
-  signatureType: z.enum(["drawn", "typed"]).optional().default("typed"),
-  declarationAccepted: z.boolean().optional().default(true),
-  fraudWarningAccepted: z.boolean().optional().default(true),
-  contentsExclusionAccepted: z.boolean().optional().default(true),
+  signatureData: z.string().min(10, "Signature is required"),
+  signatureType: z.enum(["drawn", "typed"]),
+  declarationAccepted: z.literal(true, {
+    errorMap: () => ({ message: "You must accept the declaration" }),
+  }),
+  fraudWarningAccepted: z.literal(true, {
+    errorMap: () => ({ message: "You must acknowledge the fraud warning" }),
+  }),
+  contentsExclusionAccepted: z.literal(true, {
+    errorMap: () => ({ message: "You must acknowledge the contents exclusion" }),
+  }),
 });
 
 // Combined form data type
