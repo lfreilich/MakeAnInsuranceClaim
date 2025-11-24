@@ -6,6 +6,7 @@ import express, {
   Response,
   NextFunction,
 } from "express";
+import session from "express-session";
 
 import { registerRoutes } from "./routes";
 
@@ -33,6 +34,20 @@ app.use(express.json({
   }
 }));
 app.use(express.urlencoded({ extended: false }));
+
+// Session configuration with 30-minute timeout
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'moreland-claims-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true, // Prevent XSS attacks
+    maxAge: 30 * 60 * 1000, // 30 minutes in milliseconds
+    sameSite: 'lax', // CSRF protection
+  },
+  rolling: true, // Reset expiration on activity (sliding window)
+}));
 
 app.use((req, res, next) => {
   const start = Date.now();
