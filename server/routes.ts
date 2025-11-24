@@ -125,9 +125,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { insurerClaimRef, insurerSubmittedAt, insurerResponseDate, userId } = req.body;
 
       const updates: any = {};
-      if (insurerClaimRef !== undefined) updates.insurerClaimRef = insurerClaimRef;
-      if (insurerSubmittedAt !== undefined) updates.insurerSubmittedAt = insurerSubmittedAt ? new Date(insurerSubmittedAt) : null;
-      if (insurerResponseDate !== undefined) updates.insurerResponseDate = insurerResponseDate ? new Date(insurerResponseDate) : null;
+      if (insurerClaimRef !== undefined) {
+        updates.insurerClaimRef = insurerClaimRef.trim() || null;
+      }
+      
+      if (insurerSubmittedAt !== undefined) {
+        const trimmed = insurerSubmittedAt.trim();
+        if (trimmed) {
+          const date = new Date(trimmed);
+          if (isNaN(date.getTime())) {
+            res.status(400).json({ error: "Invalid submission date" });
+            return;
+          }
+          updates.insurerSubmittedAt = date;
+        } else {
+          updates.insurerSubmittedAt = null;
+        }
+      }
+      
+      if (insurerResponseDate !== undefined) {
+        const trimmed = insurerResponseDate.trim();
+        if (trimmed) {
+          const date = new Date(trimmed);
+          if (isNaN(date.getTime())) {
+            res.status(400).json({ error: "Invalid response date" });
+            return;
+          }
+          updates.insurerResponseDate = date;
+        } else {
+          updates.insurerResponseDate = null;
+        }
+      }
 
       const updatedClaim = await storage.updateClaim(claimId, updates);
       if (!updatedClaim) {
@@ -136,7 +164,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Create audit log for insurer submission
-      if (userId && insurerSubmittedAt) {
+      if (userId && updates.insurerSubmittedAt) {
         await storage.createAuditLog({
           claimId,
           userId: parseInt(userId),
