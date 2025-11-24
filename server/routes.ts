@@ -12,6 +12,12 @@ import {
   verifyCodeSchema,
 } from "@shared/schema";
 import { z } from "zod";
+import { 
+  requireAuth, 
+  requireStaff, 
+  requireClaimAccess, 
+  requireClaimWrite 
+} from "./middleware/auth";
 
 const objectStorageService = new ObjectStorageService();
 
@@ -142,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get a claim by ID
-  app.get("/api/claims/:id", async (req: Request, res: Response) => {
+  app.get("/api/claims/:id", requireClaimAccess, async (req: Request, res: Response) => {
     try {
       const claim = await storage.getClaim(parseInt(req.params.id));
       if (!claim) {
@@ -157,13 +163,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get a claim by reference number
-  app.get("/api/claims/ref/:referenceNumber", async (req: Request, res: Response) => {
+  app.get("/api/claims/ref/:referenceNumber", requireAuth, async (req: Request, res: Response) => {
     try {
       const claim = await storage.getClaimByReference(req.params.referenceNumber);
       if (!claim) {
         res.status(404).json({ error: "Claim not found" });
         return;
       }
+
+      // Check if user has access to this claim
+      const user = req.session.user!;
+      if (user.role !== 'staff' && !user.claimAccess.includes(claim.id)) {
+        res.status(403).json({ error: "Access denied to this claim" });
+        return;
+      }
+
       res.json(claim);
     } catch (error: any) {
       console.error("Get claim by reference error:", error);
@@ -172,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all claims (admin endpoint)
-  app.get("/api/claims", async (req: Request, res: Response) => {
+  app.get("/api/claims", requireStaff, async (req: Request, res: Response) => {
     try {
       const claims = await storage.getAllClaims();
       res.json(claims);
@@ -183,7 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update claim status (admin endpoint)
-  app.patch("/api/claims/:id/status", async (req: Request, res: Response) => {
+  app.patch("/api/claims/:id/status", requireStaff, async (req: Request, res: Response) => {
     try {
       const claimId = parseInt(req.params.id);
       const { status } = req.body;
@@ -207,7 +221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update insurer submission details (admin endpoint)
-  app.patch("/api/claims/:id/insurer-details", async (req: Request, res: Response) => {
+  app.patch("/api/claims/:id/insurer-details", requireStaff, async (req: Request, res: Response) => {
     try {
       const claimId = parseInt(req.params.id);
       if (isNaN(claimId)) {
@@ -446,7 +460,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== CLAIM NOTES ENDPOINTS ==========
   
   // Get all notes for a claim
-  app.get("/api/claims/:claimId/notes", async (req: Request, res: Response) => {
+  app.get("/api/claims/:claimId/notes", requireClaimAccess, async (req: Request, res: Response) => {
     try {
       const claimId = parseInt(req.params.claimId);
       const notes = await storage.getClaimNotes(claimId);
@@ -458,7 +472,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new note for a claim
-  app.post("/api/claims/:claimId/notes", async (req: Request, res: Response) => {
+  app.post("/api/claims/:claimId/notes", requireClaimWrite, async (req: Request, res: Response) => {
     try {
       const claimId = parseInt(req.params.claimId);
       const { authorUserId, body, visibility, noteType, followUpDate, autoChaserFlag } = req.body;
@@ -487,10 +501,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update a note
-  app.patch("/api/notes/:id", async (req: Request, res: Response) => {
+  app.patch("/api/notes/:id", requireAuth, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
+
+      // First, get the note to check access
+      const existingNote = await storage.getNote(id);
+      
+      if (!existingNote) {
+        res.status(404).json({ error: "Note not found" });
+        return;
+      }
+
+      // Check access to this claim
+      const user = req.session.user!;
+      if (user.role !== 'staff' && !user.claimAccess.includes(existingNote.claimId)) {
+        res.status(403).json({ error: "Access denied to this claim" });
+        return;
+      }
+
+      // Assessors are read-only
+      if (user.role === 'assessor') {
+        res.status(403).json({ error: "Assessors have read-only access" });
+        return;
+      }
 
       const updatedNote = await storage.updateNote(id, updates);
       if (!updatedNote) {
@@ -506,7 +541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete a note
-  app.delete("/api/notes/:id", async (req: Request, res: Response) => {
+  app.delete("/api/notes/:id", requireStaff, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const success = await storage.deleteNote(id);
@@ -526,7 +561,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== INSURANCE POLICIES ENDPOINTS ==========
 
   // Get all policies
-  app.get("/api/policies", async (req: Request, res: Response) => {
+  app.get("/api/policies", requireStaff, async (req: Request, res: Response) => {
     try {
       const policies = await storage.getAllPolicies();
       res.json(policies);
@@ -537,7 +572,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get a single policy
-  app.get("/api/policies/:id", async (req: Request, res: Response) => {
+  app.get("/api/policies/:id", requireStaff, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const policy = await storage.getPolicy(id);
@@ -555,7 +590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new policy
-  app.post("/api/policies", async (req: Request, res: Response) => {
+  app.post("/api/policies", requireStaff, async (req: Request, res: Response) => {
     try {
       const { policyNumber, policyName, insurerName, coverageType, excessAmount, policyStartDate, policyEndDate, buildingAddress, notes } = req.body;
 
@@ -585,7 +620,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update a policy
-  app.patch("/api/policies/:id", async (req: Request, res: Response) => {
+  app.patch("/api/policies/:id", requireStaff, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
@@ -614,7 +649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== AUDIT LOG ENDPOINTS ==========
 
   // Get audit logs for a claim
-  app.get("/api/claims/:claimId/audit-logs", async (req: Request, res: Response) => {
+  app.get("/api/claims/:claimId/audit-logs", requireClaimAccess, async (req: Request, res: Response) => {
     try {
       const claimId = parseInt(req.params.claimId);
       const logs = await storage.getClaimAuditLogs(claimId);
@@ -626,7 +661,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get status transitions for a claim
-  app.get("/api/claims/:claimId/status-transitions", async (req: Request, res: Response) => {
+  app.get("/api/claims/:claimId/status-transitions", requireClaimAccess, async (req: Request, res: Response) => {
     try {
       const claimId = parseInt(req.params.claimId);
       const transitions = await storage.getClaimStatusTransitions(claimId);
@@ -640,7 +675,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== USER MANAGEMENT ENDPOINTS ==========
 
   // Get all users
-  app.get("/api/users", async (req: Request, res: Response) => {
+  app.get("/api/users", requireStaff, async (req: Request, res: Response) => {
     try {
       const users = await storage.getAllUsers();
       res.json(users);
@@ -651,7 +686,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get a single user
-  app.get("/api/users/:id", async (req: Request, res: Response) => {
+  app.get("/api/users/:id", requireStaff, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       const user = await storage.getUser(id);
@@ -669,7 +704,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new user
-  app.post("/api/users", async (req: Request, res: Response) => {
+  app.post("/api/users", requireStaff, async (req: Request, res: Response) => {
     try {
       const { name, email, role } = req.body;
 
@@ -693,7 +728,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update claim assignment (assign handler)
-  app.patch("/api/claims/:id/assign", async (req: Request, res: Response) => {
+  app.patch("/api/claims/:id/assign", requireStaff, async (req: Request, res: Response) => {
     try {
       const claimId = parseInt(req.params.id);
       const { handlerUserId, policyId } = req.body;
@@ -730,7 +765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========== LOSS ASSESSOR ENDPOINTS ==========
 
   // Get all loss assessors
-  app.get("/api/loss-assessors", async (req: Request, res: Response) => {
+  app.get("/api/loss-assessors", requireStaff, async (req: Request, res: Response) => {
     try {
       const assessors = await storage.getAllLossAssessors();
       res.json(assessors);
@@ -741,7 +776,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get a single loss assessor
-  app.get("/api/loss-assessors/:id", async (req: Request, res: Response) => {
+  app.get("/api/loss-assessors/:id", requireStaff, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -764,7 +799,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create a new loss assessor
-  app.post("/api/loss-assessors", async (req: Request, res: Response) => {
+  app.post("/api/loss-assessors", requireStaff, async (req: Request, res: Response) => {
     try {
       const { companyName, contactName, email, phone, specializations, address, notes } = req.body;
 
@@ -799,7 +834,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update a loss assessor
-  app.patch("/api/loss-assessors/:id", async (req: Request, res: Response) => {
+  app.patch("/api/loss-assessors/:id", requireStaff, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -861,7 +896,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Assign loss assessor to claim
-  app.patch("/api/claims/:id/assign-assessor", async (req: Request, res: Response) => {
+  app.patch("/api/claims/:id/assign-assessor", requireStaff, async (req: Request, res: Response) => {
     try {
       const claimId = parseInt(req.params.id);
       if (isNaN(claimId)) {
@@ -927,7 +962,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========================================
 
   // Create a new payment record
-  app.post("/api/claims/:id/payments", async (req: Request, res: Response) => {
+  app.post("/api/claims/:id/payments", requireStaff, async (req: Request, res: Response) => {
     try {
       const claimId = parseInt(req.params.id);
       if (isNaN(claimId)) {
@@ -988,7 +1023,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get all payments for a claim
-  app.get("/api/claims/:id/payments", async (req: Request, res: Response) => {
+  app.get("/api/claims/:id/payments", requireClaimAccess, async (req: Request, res: Response) => {
     try {
       const claimId = parseInt(req.params.id);
       if (isNaN(claimId)) {
@@ -1005,7 +1040,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update payment status
-  app.patch("/api/payments/:id/status", async (req: Request, res: Response) => {
+  app.patch("/api/payments/:id/status", requireStaff, async (req: Request, res: Response) => {
     try {
       const paymentId = parseInt(req.params.id);
       if (isNaN(paymentId)) {
@@ -1057,7 +1092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ========================================
 
   // Close a claim
-  app.post("/api/claims/:id/close", async (req: Request, res: Response) => {
+  app.post("/api/claims/:id/close", requireStaff, async (req: Request, res: Response) => {
     try {
       const claimId = parseInt(req.params.id);
       if (isNaN(claimId)) {

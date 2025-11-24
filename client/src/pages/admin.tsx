@@ -58,8 +58,12 @@ export default function AdminDashboard() {
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [authStep, setAuthStep] = useState<"email" | "code">("email");
   const [authError, setAuthError] = useState("");
+  const [codeSentMessage, setCodeSentMessage] = useState("");
+  const [user, setUser] = useState<{ email: string; role: string; claimAccess: number[] } | null>(null);
 
   const { data: claims = [], isLoading } = useQuery<Claim[]>({
     queryKey: ["/api/claims"],
@@ -110,15 +114,73 @@ export default function AdminDashboard() {
     },
   });
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Simple password check - in production, use proper authentication
-    if (password === "moreland2024") {
-      setIsAuthenticated(true);
+  const requestCodeMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const response = await fetch("/api/auth/request-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to send verification code");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      setAuthStep("code");
+      setCodeSentMessage("Verification code sent to your email");
       setAuthError("");
-    } else {
-      setAuthError("Incorrect password");
-    }
+    },
+    onError: (error: Error) => {
+      setAuthError(error.message);
+    },
+  });
+
+  const verifyCodeMutation = useMutation({
+    mutationFn: async ({ email, code }: { email: string; code: string }) => {
+      const response = await fetch("/api/auth/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Invalid verification code");
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setIsAuthenticated(true);
+      setUser(data.user);
+      setAuthError("");
+      setCodeSentMessage("");
+    },
+    onError: (error: Error) => {
+      setAuthError(error.message);
+    },
+  });
+
+  const handleRequestCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+    setCodeSentMessage("");
+    requestCodeMutation.mutate(email);
+  };
+
+  const handleVerifyCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+    verifyCodeMutation.mutate({ email, code: verificationCode });
+  };
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    setIsAuthenticated(false);
+    setUser(null);
+    setEmail("");
+    setVerificationCode("");
+    setAuthStep("email");
   };
 
   const filteredClaims = claims.filter((claim) => {
@@ -200,25 +262,77 @@ export default function AdminDashboard() {
               <Shield className="h-5 w-5" />
               Admin Access
             </CardTitle>
+            <p className="text-sm text-muted-foreground mt-2">
+              {authStep === "email" 
+                ? "Enter your email to receive a verification code" 
+                : "Enter the 6-digit code sent to your email"}
+            </p>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <Input
-                  type="password"
-                  placeholder="Enter admin password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  data-testid="input-admin-password"
-                />
-                {authError && (
-                  <p className="text-sm text-destructive mt-2">{authError}</p>
-                )}
-              </div>
-              <Button type="submit" className="w-full" data-testid="button-admin-login">
-                Access Dashboard
-              </Button>
-            </form>
+            {authStep === "email" ? (
+              <form onSubmit={handleRequestCode} className="space-y-4">
+                <div>
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    data-testid="input-email"
+                  />
+                  {authError && (
+                    <p className="text-sm text-destructive mt-2">{authError}</p>
+                  )}
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={requestCodeMutation.isPending}
+                  data-testid="button-request-code"
+                >
+                  {requestCodeMutation.isPending ? "Sending..." : "Send Verification Code"}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleVerifyCode} className="space-y-4">
+                <div>
+                  <Input
+                    type="text"
+                    placeholder="Enter 6-digit code"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                    maxLength={6}
+                    required
+                    data-testid="input-verification-code"
+                  />
+                  {codeSentMessage && (
+                    <p className="text-sm text-green-600 mt-2">{codeSentMessage}</p>
+                  )}
+                  {authError && (
+                    <p className="text-sm text-destructive mt-2">{authError}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={verifyCodeMutation.isPending}
+                    data-testid="button-verify-code"
+                  >
+                    {verifyCodeMutation.isPending ? "Verifying..." : "Verify & Access Dashboard"}
+                  </Button>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    className="w-full"
+                    onClick={() => setAuthStep("email")}
+                    data-testid="button-back-to-email"
+                  >
+                    Back to Email
+                  </Button>
+                </div>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -243,28 +357,43 @@ export default function AdminDashboard() {
               {filteredClaims.length} claim{filteredClaims.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <div className="flex gap-2">
-            <Link href="/admin/policies">
-              <Button variant="outline" data-testid="button-manage-policies">
-                <Building2 className="h-4 w-4 mr-2" />
-                Manage Policies
+          <div className="flex items-center gap-4">
+            {user && (
+              <div className="text-sm text-right">
+                <p className="font-medium">{user.email}</p>
+                <p className="text-muted-foreground capitalize">{user.role}</p>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Link href="/admin/policies">
+                <Button variant="outline" data-testid="button-manage-policies">
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Manage Policies
+                </Button>
+              </Link>
+              <Link href="/admin/loss-assessors">
+                <Button variant="outline" data-testid="button-manage-assessors">
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Manage Loss Assessors
+                </Button>
+              </Link>
+              <Button
+                onClick={exportToCSV}
+                variant="outline"
+                disabled={filteredClaims.length === 0}
+                data-testid="button-export-csv"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
               </Button>
-            </Link>
-            <Link href="/admin/loss-assessors">
-              <Button variant="outline" data-testid="button-manage-assessors">
-                <UserCheck className="h-4 w-4 mr-2" />
-                Manage Loss Assessors
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                data-testid="button-logout"
+              >
+                Logout
               </Button>
-            </Link>
-            <Button
-              onClick={exportToCSV}
-              variant="outline"
-              disabled={filteredClaims.length === 0}
-              data-testid="button-export-csv"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export CSV
-            </Button>
+            </div>
           </div>
         </div>
 

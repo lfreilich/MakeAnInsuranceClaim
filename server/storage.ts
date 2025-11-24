@@ -62,6 +62,7 @@ export interface IStorage {
   
   // Notes operations
   createNote(note: Omit<InsertClaimNote, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClaimNote>;
+  getNote(id: number): Promise<ClaimNote | undefined>;
   getClaimNotes(claimId: number): Promise<ClaimNote[]>;
   updateNote(id: number, updates: Partial<ClaimNote>): Promise<ClaimNote | undefined>;
   deleteNote(id: number): Promise<boolean>;
@@ -89,6 +90,10 @@ export interface IStorage {
     role: 'staff' | 'tenant' | 'assessor' | 'none';
     claimAccess?: number[];
   }>;
+  
+  // Claim access operations
+  getClaimsByEmail(email: string): Promise<Claim[]>;
+  getAssessorClaims(email: string): Promise<Claim[]>;
   
   // Claim closure operations
   closeClaim(claimId: number, closeReason: string, userId?: number, finalNotes?: string): Promise<Claim | undefined>;
@@ -277,6 +282,14 @@ export class DatabaseStorage implements IStorage {
     });
     
     return note;
+  }
+
+  async getNote(id: number): Promise<ClaimNote | undefined> {
+    const [note] = await db
+      .select()
+      .from(claimNotes)
+      .where(eq(claimNotes.id, id));
+    return note || undefined;
   }
 
   async getClaimNotes(claimId: number): Promise<ClaimNote[]> {
@@ -634,6 +647,33 @@ export class DatabaseStorage implements IStorage {
     }
 
     return { role: 'none' };
+  }
+
+  async getClaimsByEmail(email: string): Promise<Claim[]> {
+    const normalizedEmail = email.toLowerCase().trim();
+    return await db
+      .select()
+      .from(claims)
+      .where(eq(claims.claimantEmail, normalizedEmail));
+  }
+
+  async getAssessorClaims(email: string): Promise<Claim[]> {
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    const assessor = await db
+      .select()
+      .from(lossAssessors)
+      .where(eq(lossAssessors.email, normalizedEmail))
+      .limit(1);
+    
+    if (assessor.length === 0) {
+      return [];
+    }
+    
+    return await db
+      .select()
+      .from(claims)
+      .where(eq(claims.lossAssessorId, assessor[0].id));
   }
 }
 
