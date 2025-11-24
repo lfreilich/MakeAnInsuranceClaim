@@ -829,6 +829,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========================================
+  // Payment Endpoints (Phase 3)
+  // ========================================
+
+  // Create a new payment record
+  app.post("/api/claims/:id/payments", async (req: Request, res: Response) => {
+    try {
+      const claimId = parseInt(req.params.id);
+      if (isNaN(claimId)) {
+        res.status(400).json({ error: "Invalid claim ID" });
+        return;
+      }
+
+      // Verify claim exists
+      const claim = await storage.getClaim(claimId);
+      if (!claim) {
+        res.status(404).json({ error: "Claim not found" });
+        return;
+      }
+
+      const { 
+        paymentType, 
+        amount, 
+        currency = "GBP",
+        description,
+        recipientName,
+        recipientEmail,
+        userId
+      } = req.body;
+
+      // Validate required fields
+      if (!paymentType || !amount) {
+        res.status(400).json({ error: "Payment type and amount are required" });
+        return;
+      }
+
+      if (!["settlement", "excess", "refund"].includes(paymentType)) {
+        res.status(400).json({ error: "Invalid payment type" });
+        return;
+      }
+
+      if (typeof amount !== "number" || amount <= 0) {
+        res.status(400).json({ error: "Amount must be a positive number in pence" });
+        return;
+      }
+
+      const payment = await storage.createPayment({
+        claimId,
+        paymentType,
+        amount,
+        currency,
+        description,
+        recipientName,
+        recipientEmail,
+        status: "pending",
+        createdBy: userId ? parseInt(userId) : null,
+      });
+
+      res.status(201).json(payment);
+    } catch (error: any) {
+      console.error("Create payment error:", error);
+      res.status(500).json({ error: error.message || "Failed to create payment" });
+    }
+  });
+
+  // Get all payments for a claim
+  app.get("/api/claims/:id/payments", async (req: Request, res: Response) => {
+    try {
+      const claimId = parseInt(req.params.id);
+      if (isNaN(claimId)) {
+        res.status(400).json({ error: "Invalid claim ID" });
+        return;
+      }
+
+      const payments = await storage.getClaimPayments(claimId);
+      res.json(payments);
+    } catch (error: any) {
+      console.error("Get claim payments error:", error);
+      res.status(500).json({ error: error.message || "Failed to retrieve payments" });
+    }
+  });
+
+  // Update payment status
+  app.patch("/api/payments/:id/status", async (req: Request, res: Response) => {
+    try {
+      const paymentId = parseInt(req.params.id);
+      if (isNaN(paymentId)) {
+        res.status(400).json({ error: "Invalid payment ID" });
+        return;
+      }
+
+      const { status, transactionReference, paymentMethod, blinkPaymentId } = req.body;
+
+      if (!status) {
+        res.status(400).json({ error: "Status is required" });
+        return;
+      }
+
+      if (!["pending", "completed", "failed", "cancelled"].includes(status)) {
+        res.status(400).json({ error: "Invalid status value" });
+        return;
+      }
+
+      const paidAt = status === "completed" ? new Date() : undefined;
+      
+      // Build update object
+      const updates: any = {
+        status,
+        updatedAt: new Date(),
+      };
+      
+      if (paidAt) updates.paidAt = paidAt;
+      if (transactionReference) updates.transactionReference = transactionReference;
+      if (paymentMethod) updates.paymentMethod = paymentMethod;
+      if (blinkPaymentId) updates.blinkPaymentId = blinkPaymentId;
+
+      const updatedPayment = await storage.updatePayment(paymentId, updates);
+      
+      if (!updatedPayment) {
+        res.status(404).json({ error: "Payment not found" });
+        return;
+      }
+
+      res.json(updatedPayment);
+    } catch (error: any) {
+      console.error("Update payment status error:", error);
+      res.status(500).json({ error: error.message || "Failed to update payment status" });
+    }
+  });
+
+  // ========================================
+  // Claim Closure Endpoint (Phase 4)
+  // ========================================
+
+  // Close a claim
+  app.post("/api/claims/:id/close", async (req: Request, res: Response) => {
+    try {
+      const claimId = parseInt(req.params.id);
+      if (isNaN(claimId)) {
+        res.status(400).json({ error: "Invalid claim ID" });
+        return;
+      }
+
+      // Verify claim exists and is not already closed
+      const claim = await storage.getClaim(claimId);
+      if (!claim) {
+        res.status(404).json({ error: "Claim not found" });
+        return;
+      }
+
+      if (claim.closedAt) {
+        res.status(400).json({ error: "Claim is already closed" });
+        return;
+      }
+
+      const { closeReason, userId, finalNotes } = req.body;
+
+      if (!closeReason || typeof closeReason !== "string" || closeReason.length < 10) {
+        res.status(400).json({ 
+          error: "Close reason is required and must be at least 10 characters" 
+        });
+        return;
+      }
+
+      const closedClaim = await storage.closeClaim(
+        claimId,
+        closeReason,
+        userId ? parseInt(userId) : undefined,
+        finalNotes
+      );
+
+      if (!closedClaim) {
+        res.status(500).json({ error: "Failed to close claim" });
+        return;
+      }
+
+      res.json(closedClaim);
+    } catch (error: any) {
+      console.error("Close claim error:", error);
+      res.status(500).json({ error: error.message || "Failed to close claim" });
+    }
+  });
+
   // Return the HTTP server
   return createServer(app);
 }
