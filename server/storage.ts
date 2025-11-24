@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 
 export interface IStorage {
   createClaim(claim: Omit<InsertClaim, 'id' | 'referenceNumber' | 'submittedAt' | 'status'>): Promise<Claim>;
-  getClaim(id: string): Promise<Claim | undefined>;
+  getClaim(id: number): Promise<Claim | undefined>;
   getClaimByReference(referenceNumber: string): Promise<Claim | undefined>;
   getAllClaims(): Promise<Claim[]>;
   updateClaimStatus(id: number, status: string): Promise<Claim | undefined>;
@@ -37,7 +37,7 @@ export class DatabaseStorage implements IStorage {
     return claim;
   }
 
-  async getClaim(id: string): Promise<Claim | undefined> {
+  async getClaim(id: number): Promise<Claim | undefined> {
     const [claim] = await db.select().from(claims).where(eq(claims.id, id));
     return claim || undefined;
   }
