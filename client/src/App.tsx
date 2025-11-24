@@ -7,6 +7,7 @@ import LandingPage from "@/pages/landing";
 import ClaimForm from "@/pages/claim-form";
 import ClaimSuccess from "@/pages/claim-success";
 import AdminDashboard from "@/pages/admin";
+import PoliciesPage from "@/pages/policies";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/claim/start" component={ClaimForm} />
       <Route path="/claim/success/:referenceNumber" component={ClaimSuccess} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/policies" component={PoliciesPage} />
       <Route component={NotFound} />
     </Switch>
   );

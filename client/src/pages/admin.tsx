@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Link } from "wouter";
 import {
   Table,
   TableBody,
@@ -26,6 +27,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ChevronDown,
   ChevronUp,
@@ -40,9 +43,14 @@ import {
   Home,
   AlertCircle,
   Shield,
+  Building2,
+  Clock,
+  MessageSquare,
+  UserCheck,
 } from "lucide-react";
 import { format } from "date-fns";
-import type { Claim } from "@shared/schema";
+import type { Claim, User as UserType, InsurancePolicy, AuditLog, ClaimNote } from "@shared/schema";
+import { ClaimDetailsModal } from "@/components/claim-details-modal";
 
 export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,6 +63,16 @@ export default function AdminDashboard() {
 
   const { data: claims = [], isLoading } = useQuery<Claim[]>({
     queryKey: ["/api/claims"],
+    enabled: isAuthenticated,
+  });
+
+  const { data: users = [] } = useQuery<UserType[]>({
+    queryKey: ["/api/users"],
+    enabled: isAuthenticated,
+  });
+
+  const { data: policies = [] } = useQuery<InsurancePolicy[]>({
+    queryKey: ["/api/policies"],
     enabled: isAuthenticated,
   });
 
@@ -77,6 +95,15 @@ export default function AdminDashboard() {
         throw new Error("Failed to update status");
       }
       return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/claims"] });
+    },
+  });
+
+  const assignClaimMutation = useMutation({
+    mutationFn: async ({ id, handlerUserId, policyId }: { id: number; handlerUserId?: number; policyId?: number }) => {
+      await apiRequest("PATCH", `/api/claims/${id}/assign`, { handlerUserId, policyId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/claims"] });
@@ -216,15 +243,23 @@ export default function AdminDashboard() {
               {filteredClaims.length} claim{filteredClaims.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Button
-            onClick={exportToCSV}
-            variant="outline"
-            disabled={filteredClaims.length === 0}
-            data-testid="button-export-csv"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </Button>
+          <div className="flex gap-2">
+            <Link href="/admin/policies">
+              <Button variant="outline" data-testid="button-manage-policies">
+                <Building2 className="h-4 w-4 mr-2" />
+                Manage Policies
+              </Button>
+            </Link>
+            <Button
+              onClick={exportToCSV}
+              variant="outline"
+              disabled={filteredClaims.length === 0}
+              data-testid="button-export-csv"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
+          </div>
         </div>
 
         <Card>
@@ -331,7 +366,7 @@ export default function AdminDashboard() {
                           <TableRow>
                             <TableCell colSpan={8} className="bg-muted/50">
                               <div className="p-4 space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                   <div>
                                     <p className="text-sm font-medium mb-2">
                                       Contact Information
@@ -367,33 +402,55 @@ export default function AdminDashboard() {
                                   </div>
                                   <div>
                                     <p className="text-sm font-medium mb-2">
-                                      Update Status
+                                      Assign Handler
                                     </p>
                                     <Select
-                                      value={claim.status}
-                                      onValueChange={(value) =>
-                                        updateStatusMutation.mutate({
+                                      value={claim.handlerUserId?.toString() || "unassigned"}
+                                      onValueChange={(value) => {
+                                        const handlerUserId = value === "unassigned" ? null : parseInt(value);
+                                        assignClaimMutation.mutate({
                                           id: claim.id,
-                                          status: value as
-                                            | "pending"
-                                            | "approved"
-                                            | "rejected",
-                                        })
-                                      }
+                                          handlerUserId: handlerUserId || undefined,
+                                        });
+                                      }}
                                     >
-                                      <SelectTrigger data-testid={`select-status-${claim.id}`}>
+                                      <SelectTrigger data-testid={`select-handler-${claim.id}`}>
                                         <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="pending">
-                                          Pending
-                                        </SelectItem>
-                                        <SelectItem value="approved">
-                                          Approved
-                                        </SelectItem>
-                                        <SelectItem value="rejected">
-                                          Rejected
-                                        </SelectItem>
+                                        <SelectItem value="unassigned">Unassigned</SelectItem>
+                                        {users.map((user) => (
+                                          <SelectItem key={user.id} value={user.id.toString()}>
+                                            {user.name}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium mb-2">
+                                      Link Policy
+                                    </p>
+                                    <Select
+                                      value={claim.policyId?.toString() || "none"}
+                                      onValueChange={(value) => {
+                                        const policyId = value === "none" ? null : parseInt(value);
+                                        assignClaimMutation.mutate({
+                                          id: claim.id,
+                                          policyId: policyId || undefined,
+                                        });
+                                      }}
+                                    >
+                                      <SelectTrigger data-testid={`select-policy-${claim.id}`}>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="none">No Policy</SelectItem>
+                                        {policies.map((policy) => (
+                                          <SelectItem key={policy.id} value={policy.id.toString()}>
+                                            {policy.policyName}
+                                          </SelectItem>
+                                        ))}
                                       </SelectContent>
                                     </Select>
                                   </div>
@@ -419,203 +476,11 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Dialog
-          open={selectedClaim !== null}
-          onOpenChange={() => setSelectedClaim(null)}
-        >
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                Claim Details - {selectedClaim?.referenceNumber}
-              </DialogTitle>
-            </DialogHeader>
-            {selectedClaim && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h3 className="font-semibold mb-2 flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      Claimant Information
-                    </h3>
-                    <dl className="space-y-2 text-sm">
-                      <div>
-                        <dt className="text-muted-foreground">Name</dt>
-                        <dd>{selectedClaim.claimantName}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-muted-foreground">Email</dt>
-                        <dd>{selectedClaim.claimantEmail}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-muted-foreground">Phone</dt>
-                        <dd>{selectedClaim.claimantPhone}</dd>
-                      </div>
-                    </dl>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-2 flex items-center gap-2">
-                      <Home className="h-4 w-4" />
-                      Property Information
-                    </h3>
-                    <dl className="space-y-2 text-sm">
-                      <div>
-                        <dt className="text-muted-foreground">Address</dt>
-                        <dd>{selectedClaim.propertyAddress}</dd>
-                      </div>
-                      {selectedClaim.propertyBlock && (
-                        <div>
-                          <dt className="text-muted-foreground">Block</dt>
-                          <dd>{selectedClaim.propertyBlock}</dd>
-                        </div>
-                      )}
-                      {selectedClaim.propertyConstructionAge && (
-                        <div>
-                          <dt className="text-muted-foreground">
-                            Construction Age
-                          </dt>
-                          <dd>{selectedClaim.propertyConstructionAge}</dd>
-                        </div>
-                      )}
-                      {selectedClaim.propertyConstructionType && (
-                        <div>
-                          <dt className="text-muted-foreground">
-                            Construction Type
-                          </dt>
-                          <dd>{selectedClaim.propertyConstructionType}</dd>
-                        </div>
-                      )}
-                    </dl>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-semibold mb-2 flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4" />
-                    Incident Information
-                  </h3>
-                  <dl className="space-y-2 text-sm">
-                    <div>
-                      <dt className="text-muted-foreground">Type</dt>
-                      <dd>{formatIncidentType(selectedClaim.incidentType)}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-muted-foreground">Date</dt>
-                      <dd>
-                        {format(new Date(selectedClaim.incidentDate), "PPP")}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-muted-foreground">Description</dt>
-                      <dd className="whitespace-pre-wrap">
-                        {selectedClaim.incidentDescription}
-                      </dd>
-                    </div>
-                  </dl>
-                </div>
-
-                {selectedClaim.hasBuildingDamage && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Building Damage</h3>
-                    <dl className="space-y-2 text-sm">
-                      <div>
-                        <dt className="text-muted-foreground">Description</dt>
-                        <dd>{selectedClaim.buildingDamageDescription}</dd>
-                      </div>
-                      {selectedClaim.buildingDamageAffectedAreas && (
-                        <div>
-                          <dt className="text-muted-foreground">
-                            Affected Areas
-                          </dt>
-                          <dd>{selectedClaim.buildingDamageAffectedAreas}</dd>
-                        </div>
-                      )}
-                    </dl>
-                  </div>
-                )}
-
-                {selectedClaim.hasTheft && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Theft/Vandalism</h3>
-                    <dl className="space-y-2 text-sm">
-                      <div>
-                        <dt className="text-muted-foreground">Description</dt>
-                        <dd>{selectedClaim.theftDescription}</dd>
-                      </div>
-                      {selectedClaim.theftPoliceReported && (
-                        <div>
-                          <dt className="text-muted-foreground">
-                            Police Reference
-                          </dt>
-                          <dd>{selectedClaim.theftPoliceReference}</dd>
-                        </div>
-                      )}
-                    </dl>
-                  </div>
-                )}
-
-                {selectedClaim.isInvestmentProperty && (
-                  <div>
-                    <h3 className="font-semibold mb-2">Tenant Information</h3>
-                    <dl className="space-y-2 text-sm">
-                      <div>
-                        <dt className="text-muted-foreground">Name</dt>
-                        <dd>{selectedClaim.tenantName}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-muted-foreground">Phone</dt>
-                        <dd>{selectedClaim.tenantPhone}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-muted-foreground">Email</dt>
-                        <dd>{selectedClaim.tenantEmail}</dd>
-                      </div>
-                    </dl>
-                  </div>
-                )}
-
-                <div>
-                  <h3 className="font-semibold mb-2">Uploaded Files</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    {selectedClaim.damagePhotos &&
-                      selectedClaim.damagePhotos.length > 0 && (
-                        <div>
-                          <dt className="text-muted-foreground mb-1">
-                            Damage Photos ({selectedClaim.damagePhotos.length})
-                          </dt>
-                        </div>
-                      )}
-                    {selectedClaim.repairQuotes &&
-                      selectedClaim.repairQuotes.length > 0 && (
-                        <div>
-                          <dt className="text-muted-foreground mb-1">
-                            Repair Quotes ({selectedClaim.repairQuotes.length})
-                          </dt>
-                        </div>
-                      )}
-                    {selectedClaim.policeReports &&
-                      selectedClaim.policeReports.length > 0 && (
-                        <div>
-                          <dt className="text-muted-foreground mb-1">
-                            Police Reports ({selectedClaim.policeReports.length}
-                            )
-                          </dt>
-                        </div>
-                      )}
-                    {selectedClaim.tenancyAgreements &&
-                      selectedClaim.tenancyAgreements.length > 0 && (
-                        <div>
-                          <dt className="text-muted-foreground mb-1">
-                            Tenancy Agreements (
-                            {selectedClaim.tenancyAgreements.length})
-                          </dt>
-                        </div>
-                      )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+        <ClaimDetailsModal
+          claim={selectedClaim}
+          users={users}
+          onClose={() => setSelectedClaim(null)}
+        />
       </div>
     </div>
   );

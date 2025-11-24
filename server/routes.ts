@@ -281,6 +281,290 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========== CLAIM NOTES ENDPOINTS ==========
+  
+  // Get all notes for a claim
+  app.get("/api/claims/:claimId/notes", async (req: Request, res: Response) => {
+    try {
+      const claimId = parseInt(req.params.claimId);
+      const notes = await storage.getClaimNotes(claimId);
+      res.json(notes);
+    } catch (error: any) {
+      console.error("Get notes error:", error);
+      res.status(500).json({ error: error.message || "Failed to retrieve notes" });
+    }
+  });
+
+  // Create a new note for a claim
+  app.post("/api/claims/:claimId/notes", async (req: Request, res: Response) => {
+    try {
+      const claimId = parseInt(req.params.claimId);
+      const { authorUserId, body, visibility, noteType, followUpDate, autoChaserFlag } = req.body;
+
+      if (!authorUserId || !body) {
+        res.status(400).json({ error: "authorUserId and body are required" });
+        return;
+      }
+
+      const note = await storage.createNote({
+        claimId,
+        authorUserId,
+        body,
+        visibility: visibility || "internal",
+        noteType: noteType || "general",
+        followUpDate: followUpDate ? new Date(followUpDate) : undefined,
+        autoChaserFlag: autoChaserFlag || false,
+        completed: false,
+      });
+
+      res.status(201).json(note);
+    } catch (error: any) {
+      console.error("Create note error:", error);
+      res.status(500).json({ error: error.message || "Failed to create note" });
+    }
+  });
+
+  // Update a note
+  app.patch("/api/notes/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+
+      const updatedNote = await storage.updateNote(id, updates);
+      if (!updatedNote) {
+        res.status(404).json({ error: "Note not found" });
+        return;
+      }
+
+      res.json(updatedNote);
+    } catch (error: any) {
+      console.error("Update note error:", error);
+      res.status(500).json({ error: error.message || "Failed to update note" });
+    }
+  });
+
+  // Delete a note
+  app.delete("/api/notes/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteNote(id);
+      
+      if (!success) {
+        res.status(404).json({ error: "Note not found" });
+        return;
+      }
+
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Delete note error:", error);
+      res.status(500).json({ error: error.message || "Failed to delete note" });
+    }
+  });
+
+  // ========== INSURANCE POLICIES ENDPOINTS ==========
+
+  // Get all policies
+  app.get("/api/policies", async (req: Request, res: Response) => {
+    try {
+      const policies = await storage.getAllPolicies();
+      res.json(policies);
+    } catch (error: any) {
+      console.error("Get policies error:", error);
+      res.status(500).json({ error: error.message || "Failed to retrieve policies" });
+    }
+  });
+
+  // Get a single policy
+  app.get("/api/policies/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const policy = await storage.getPolicy(id);
+      
+      if (!policy) {
+        res.status(404).json({ error: "Policy not found" });
+        return;
+      }
+
+      res.json(policy);
+    } catch (error: any) {
+      console.error("Get policy error:", error);
+      res.status(500).json({ error: error.message || "Failed to retrieve policy" });
+    }
+  });
+
+  // Create a new policy
+  app.post("/api/policies", async (req: Request, res: Response) => {
+    try {
+      const { policyNumber, policyName, insurerName, coverageType, excessAmount, policyStartDate, policyEndDate, buildingAddress, notes } = req.body;
+
+      if (!policyNumber || !policyName || !insurerName || !coverageType) {
+        res.status(400).json({ error: "policyNumber, policyName, insurerName, and coverageType are required" });
+        return;
+      }
+
+      const policy = await storage.createPolicy({
+        policyNumber,
+        policyName,
+        insurerName,
+        coverageType,
+        excessAmount,
+        policyStartDate: policyStartDate ? new Date(policyStartDate) : undefined,
+        policyEndDate: policyEndDate ? new Date(policyEndDate) : undefined,
+        buildingAddress,
+        notes,
+        active: true,
+      });
+
+      res.status(201).json(policy);
+    } catch (error: any) {
+      console.error("Create policy error:", error);
+      res.status(500).json({ error: error.message || "Failed to create policy" });
+    }
+  });
+
+  // Update a policy
+  app.patch("/api/policies/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+
+      // Convert date strings to Date objects if present
+      if (updates.policyStartDate) {
+        updates.policyStartDate = new Date(updates.policyStartDate);
+      }
+      if (updates.policyEndDate) {
+        updates.policyEndDate = new Date(updates.policyEndDate);
+      }
+
+      const updatedPolicy = await storage.updatePolicy(id, updates);
+      if (!updatedPolicy) {
+        res.status(404).json({ error: "Policy not found" });
+        return;
+      }
+
+      res.json(updatedPolicy);
+    } catch (error: any) {
+      console.error("Update policy error:", error);
+      res.status(500).json({ error: error.message || "Failed to update policy" });
+    }
+  });
+
+  // ========== AUDIT LOG ENDPOINTS ==========
+
+  // Get audit logs for a claim
+  app.get("/api/claims/:claimId/audit-logs", async (req: Request, res: Response) => {
+    try {
+      const claimId = parseInt(req.params.claimId);
+      const logs = await storage.getClaimAuditLogs(claimId);
+      res.json(logs);
+    } catch (error: any) {
+      console.error("Get audit logs error:", error);
+      res.status(500).json({ error: error.message || "Failed to retrieve audit logs" });
+    }
+  });
+
+  // Get status transitions for a claim
+  app.get("/api/claims/:claimId/status-transitions", async (req: Request, res: Response) => {
+    try {
+      const claimId = parseInt(req.params.claimId);
+      const transitions = await storage.getClaimStatusTransitions(claimId);
+      res.json(transitions);
+    } catch (error: any) {
+      console.error("Get status transitions error:", error);
+      res.status(500).json({ error: error.message || "Failed to retrieve status transitions" });
+    }
+  });
+
+  // ========== USER MANAGEMENT ENDPOINTS ==========
+
+  // Get all users
+  app.get("/api/users", async (req: Request, res: Response) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error: any) {
+      console.error("Get users error:", error);
+      res.status(500).json({ error: error.message || "Failed to retrieve users" });
+    }
+  });
+
+  // Get a single user
+  app.get("/api/users/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const user = await storage.getUser(id);
+      
+      if (!user) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      res.json(user);
+    } catch (error: any) {
+      console.error("Get user error:", error);
+      res.status(500).json({ error: error.message || "Failed to retrieve user" });
+    }
+  });
+
+  // Create a new user
+  app.post("/api/users", async (req: Request, res: Response) => {
+    try {
+      const { name, email, role } = req.body;
+
+      if (!name || !email) {
+        res.status(400).json({ error: "name and email are required" });
+        return;
+      }
+
+      const user = await storage.createUser({
+        name,
+        email,
+        role: role || "admin",
+        active: true,
+      });
+
+      res.status(201).json(user);
+    } catch (error: any) {
+      console.error("Create user error:", error);
+      res.status(500).json({ error: error.message || "Failed to create user" });
+    }
+  });
+
+  // Update claim assignment (assign handler)
+  app.patch("/api/claims/:id/assign", async (req: Request, res: Response) => {
+    try {
+      const claimId = parseInt(req.params.id);
+      const { handlerUserId, policyId } = req.body;
+
+      const updates: any = {};
+      if (handlerUserId !== undefined) updates.handlerUserId = handlerUserId;
+      if (policyId !== undefined) updates.policyId = policyId;
+
+      const updatedClaim = await storage.updateClaim(claimId, updates);
+      if (!updatedClaim) {
+        res.status(404).json({ error: "Claim not found" });
+        return;
+      }
+
+      // Log the assignment
+      if (handlerUserId) {
+        await storage.createAuditLog({
+          claimId,
+          userId: handlerUserId,
+          action: 'claim_assigned',
+          entityType: 'claim',
+          entityId: claimId,
+          changes: { handlerUserId },
+        });
+      }
+
+      res.json(updatedClaim);
+    } catch (error: any) {
+      console.error("Assign claim error:", error);
+      res.status(500).json({ error: error.message || "Failed to assign claim" });
+    }
+  });
+
   // Return the HTTP server
   return createServer(app);
 }
