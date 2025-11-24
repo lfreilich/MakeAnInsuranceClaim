@@ -119,6 +119,7 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
   };
 
   const onSubmit = (data: Step2Data) => {
+    console.log("Step 2 submitting with data:", data);
     onNext(data);
   };
 
@@ -146,18 +147,30 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Property Address *</FormLabel>
-                <div className="space-y-2">
+                <FormControl>
+                  <Input
+                    placeholder="e.g., Flat 12B, 45 High Street, London, SW1A 1AA"
+                    {...field}
+                    data-testid="input-property-address"
+                  />
+                </FormControl>
+                <FormDescription className="text-xs">
+                  Enter the full UK property address
+                </FormDescription>
+                <FormMessage />
+                <div className="mt-2">
                   <Popover open={isOpen} onOpenChange={setIsOpen}>
                     <PopoverTrigger asChild>
                       <Button
                         variant="outline"
+                        size="sm"
                         role="combobox"
                         className="w-full justify-between font-normal"
                         type="button"
                         data-testid="button-address-search"
                       >
-                        {field.value || "Search for UK address..."}
-                        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        <Search className="mr-2 h-4 w-4 shrink-0" />
+                        Search with Google Places
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-[500px] p-0" align="start">
@@ -201,19 +214,7 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
                       </Command>
                     </PopoverContent>
                   </Popover>
-                  
-                  <FormControl>
-                    <Input
-                      placeholder="Or type address manually: e.g., Flat 12B, 45 High Street, London, SW1A 1AA"
-                      {...field}
-                      data-testid="input-property-address"
-                    />
-                  </FormControl>
                 </div>
-                <FormDescription className="text-xs">
-                  Search using Google Places above, or type the full address manually
-                </FormDescription>
-                <FormMessage />
               </FormItem>
             )}
           />

@@ -59,6 +59,9 @@ Preferred communication style: Simple, everyday language.
 **API Design**: RESTful endpoints under `/api` prefix
 - POST `/api/claims` - Submit new claim
 - POST `/api/ai/enhance-description` - AI text enhancement
+- GET `/api/address/autocomplete` - Google Places address autocomplete
+- GET `/api/address/details/:placeId` - Google Places details lookup
+- POST `/api/address/construction-details` - Chimnie construction/age data
 - File upload endpoints (delegated to object storage service)
 
 **Request Processing**:
@@ -91,7 +94,7 @@ Preferred communication style: Simple, everyday language.
 
 **Key Fields**:
 - Claimant information (name, email, phone)
-- Property details (address, block, unit)
+- Property details (address, unit, placeId, construction age/type) - block now optional
 - Incident details (date, type, description)
 - Conditional sections (damage, theft, sublet) with flag-based inclusion
 - File paths stored as text arrays
@@ -123,12 +126,20 @@ Preferred communication style: Simple, everyday language.
 - File upload with streaming support
 - ACL-based access control
 
-**Address Autocomplete**: Chimnie API
-- UK property data API for address search and validation
-- Real-time address autocomplete in Step 2 (Property Details)
-- Debounced search (500ms) with minimum 3 characters
+**Address Validation**: Google Places API
+- UK address autocomplete and validation in Step 2 (Property Details)
+- Real-time address search with debounced input (500ms, minimum 3 characters)
+- Place details lookup for formatted addresses
 - Fallback to manual address entry if service unavailable
+- API key managed via GOOGLE_PLACES_API_KEY secret
+- Filters to UK addresses only (`components=country:gb`)
+
+**Property Construction Details**: Chimnie API
+- Fetches property construction age and type after address selection
+- Called automatically when address is selected via Google Places
+- Non-blocking: form can proceed even if Chimnie unavailable
 - API key managed via CHIMNIE_API_KEY secret
+- Returns construction age/year and construction type
 
 **Third-party UI Libraries**:
 - Uppy for advanced file upload UI (dashboard, progress, multi-file)
@@ -153,7 +164,8 @@ Preferred communication style: Simple, everyday language.
 - `DATABASE_URL` - PostgreSQL connection string (required)
 - `AI_INTEGRATIONS_OPENAI_BASE_URL` - AI service endpoint
 - `AI_INTEGRATIONS_OPENAI_API_KEY` - AI service authentication
-- `CHIMNIE_API_KEY` - Chimnie API for UK address autocomplete (secret)
+- `GOOGLE_PLACES_API_KEY` - Google Places API for UK address validation (secret)
+- `CHIMNIE_API_KEY` - Chimnie API for property construction details (secret)
 - `REPLIT_CONNECTORS_HOSTNAME` - Resend email service connection
 - Session and object storage secrets managed by Replit
 
