@@ -414,41 +414,16 @@ export default function LossAssessorsPage() {
                 </div>
 
                 <div className="flex gap-2 pt-2">
-                  <Dialog open={editingAssessor?.id === assessor.id} onOpenChange={(open) => !open && setEditingAssessor(null)}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => setEditingAssessor(assessor)}
-                        data-testid={`button-edit-${assessor.id}`}
-                      >
-                        <Edit className="h-3 w-3 mr-1" />
-                        Edit
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Edit Loss Assessor</DialogTitle>
-                        <DialogDescription>
-                          Update loss assessor details
-                        </DialogDescription>
-                      </DialogHeader>
-                      <LossAssessorForm
-                        defaultValues={{
-                          companyName: assessor.companyName,
-                          contactName: assessor.contactName,
-                          email: assessor.email,
-                          phone: assessor.phone,
-                          address: assessor.address || undefined,
-                          specializations: assessor.specializations || [],
-                          notes: assessor.notes || undefined,
-                        }}
-                        onSubmit={(data) => updateMutation.mutate({ id: assessor.id, data })}
-                        isPending={updateMutation.isPending}
-                      />
-                    </DialogContent>
-                  </Dialog>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setEditingAssessor(assessor)}
+                    data-testid={`button-edit-${assessor.id}`}
+                  >
+                    <Edit className="h-3 w-3 mr-1" />
+                    Edit
+                  </Button>
 
                   <Button
                     variant="outline"
@@ -464,6 +439,33 @@ export default function LossAssessorsPage() {
           ))}
         </div>
       )}
+
+      <Dialog open={!!editingAssessor} onOpenChange={(open) => !open && setEditingAssessor(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Loss Assessor</DialogTitle>
+            <DialogDescription>
+              Update loss assessor details
+            </DialogDescription>
+          </DialogHeader>
+          {editingAssessor && (
+            <LossAssessorForm
+              key={editingAssessor.id}
+              defaultValues={{
+                companyName: editingAssessor.companyName,
+                contactName: editingAssessor.contactName,
+                email: editingAssessor.email,
+                phone: editingAssessor.phone,
+                address: editingAssessor.address || undefined,
+                specializations: editingAssessor.specializations || [],
+                notes: editingAssessor.notes || undefined,
+              }}
+              onSubmit={(data) => updateMutation.mutate({ id: editingAssessor.id, data })}
+              isPending={updateMutation.isPending}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!deletingAssessor} onOpenChange={(open) => !open && setDeletingAssessor(null)}>
         <AlertDialogContent>
