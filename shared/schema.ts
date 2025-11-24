@@ -41,10 +41,12 @@ export const claims = pgTable("claims", {
   currentStage: varchar("current_stage", { length: 50 }).notNull().default("new"),
   handlerUserId: integer("handler_user_id"),
   policyId: integer("policy_id"),
+  lossAssessorId: integer("loss_assessor_id"),
   
   // Insurer Details
   insurerClaimRef: varchar("insurer_claim_ref", { length: 100 }),
   insurerSubmittedAt: timestamp("insurer_submitted_at"),
+  insurerResponseDate: timestamp("insurer_response_date"),
   
   // Closure
   closedAt: timestamp("closed_at"),
@@ -146,6 +148,20 @@ export const claimNotes = pgTable("claim_notes", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+// Loss Assessors table - external assessors who inspect claims
+export const lossAssessors = pgTable("loss_assessors", {
+  id: serial("id").primaryKey(),
+  companyName: varchar("company_name", { length: 255 }).notNull(),
+  contactName: varchar("contact_name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }).notNull(),
+  specializations: text("specializations").array(), // e.g., ["fire", "flood", "structural"]
+  address: text("address"),
+  notes: text("notes"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // TypeScript types
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
@@ -164,6 +180,9 @@ export type InsertClaimStatusTransition = typeof claimStatusTransitions.$inferIn
 
 export type ClaimNote = typeof claimNotes.$inferSelect;
 export type InsertClaimNote = typeof claimNotes.$inferInsert;
+
+export type LossAssessor = typeof lossAssessors.$inferSelect;
+export type InsertLossAssessor = typeof lossAssessors.$inferInsert;
 
 // Zod schemas for validation
 export const insertClaimSchema = createInsertSchema(claims, {
@@ -390,3 +409,13 @@ export type Step5Data = z.infer<typeof step5Schema>;
 export type Step6Data = z.infer<typeof step6Schema>;
 export type Step7Data = z.infer<typeof step7Schema>;
 export type Step8Data = z.infer<typeof step8Schema>;
+
+// Loss Assessor validation schema
+export const insertLossAssessorSchema = createInsertSchema(lossAssessors, {
+  email: z.string().email("Invalid email address"),
+  phone: z.string().min(10, "Phone number must be at least 10 characters"),
+  specializations: z.array(z.string()).optional().default([]),
+}).omit({
+  id: true,
+  createdAt: true,
+});
