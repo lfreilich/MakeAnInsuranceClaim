@@ -9,7 +9,7 @@ import { Step2PropertyDetails } from "../components/form-steps/Step2PropertyDeta
 import { Step3IncidentDetails } from "../components/form-steps/Step3IncidentDetails";
 import { Step4BuildingDamage } from "../components/form-steps/Step4BuildingDamage";
 import { Step5TheftVandalism } from "../components/form-steps/Step5TheftVandalism";
-import { Step6Sublet } from "../components/form-steps/Step6Sublet";
+import { Step6PropertyOccupancy } from "../components/form-steps/Step6PropertyOccupancy";
 import { Step7Uploads } from "../components/form-steps/Step7Uploads";
 import { Step8Declaration } from "../components/form-steps/Step8Declaration";
 import { apiRequest } from "@/lib/queryClient";
@@ -54,13 +54,14 @@ export default function ClaimForm() {
       hasBuildingDamage: formData.hasBuildingDamage ?? false,
       hasTheft: formData.hasTheft ?? false,
       theftPoliceReported: formData.theftPoliceReported ?? false,
-      hasSublet: formData.hasSublet ?? false,
+      isInvestmentProperty: formData.isInvestmentProperty ?? false,
       // Ensure arrays are never undefined
       damagePhotos: formData.damagePhotos ?? [],
       repairQuotes: formData.repairQuotes ?? [],
       invoices: formData.invoices ?? [],
       policeReports: formData.policeReports ?? [],
       otherDocuments: formData.otherDocuments ?? [],
+      tenancyAgreements: formData.tenancyAgreements ?? [],
     };
     setIsSubmitting(true);
 
@@ -177,7 +178,7 @@ export default function ClaimForm() {
               />
             )}
             {currentStep === 6 && (
-              <Step6Sublet
+              <Step6PropertyOccupancy
                 defaultValues={formData}
                 onNext={handleStepComplete}
                 onBack={handleBack}

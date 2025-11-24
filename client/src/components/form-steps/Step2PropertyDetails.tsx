@@ -136,7 +136,7 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
       <Alert className="bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
         <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
         <AlertDescription className="text-sm text-blue-900 dark:text-blue-100">
-          <strong>Required:</strong> Use the Google Places search below to find and select your UK property address. We'll verify it and retrieve construction details automatically.
+          <strong>Required:</strong> Use the address search below to find and select your UK property. We'll verify it and retrieve construction details automatically.
         </AlertDescription>
       </Alert>
 
@@ -212,7 +212,7 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
                     <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
                       <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                       <AlertDescription className="text-sm text-amber-900 dark:text-amber-100">
-                        You must select an address from Google Places to continue
+                        You must select an address from the search to continue
                       </AlertDescription>
                     </Alert>
                   )}
@@ -242,7 +242,7 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
                   )}
                 </div>
                 <FormDescription className="text-xs">
-                  Click the search button above and select your property from the Google Places results
+                  Click the search button above and select your property from the results
                 </FormDescription>
                 <FormMessage />
               </FormItem>

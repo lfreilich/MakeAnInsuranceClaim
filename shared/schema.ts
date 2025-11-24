@@ -24,7 +24,7 @@ export const claims = pgTable("claims", {
   
   // Incident Details
   incidentDate: timestamp("incident_date").notNull(),
-  incidentType: varchar("incident_type", { length: 50 }).notNull(),
+  incidentType: varchar("incident_type", { length: 100 }).notNull(),
   incidentDescription: text("incident_description").notNull(),
   
   // Building Damage
@@ -38,10 +38,12 @@ export const claims = pgTable("claims", {
   theftPoliceReported: boolean("theft_police_reported").notNull().default(false),
   theftPoliceReference: varchar("theft_police_reference", { length: 100 }),
   
-  // Sublet
-  hasSublet: boolean("has_sublet").notNull().default(false),
-  subletDescription: text("sublet_description"),
-  subletEvidence: text("sublet_evidence"),
+  // Property Occupancy
+  isInvestmentProperty: boolean("is_investment_property").notNull().default(false),
+  tenantName: varchar("tenant_name", { length: 255 }),
+  tenantPhone: varchar("tenant_phone", { length: 50 }),
+  tenantEmail: varchar("tenant_email", { length: 255 }),
+  tenancyAgreements: text("tenancy_agreements").array(),
   
   // File Uploads (stored as JSON arrays of paths)
   damagePhotos: text("damage_photos").array(),
@@ -75,6 +77,7 @@ export const insertClaimSchema = createInsertSchema(claims, {
   invoices: z.array(z.string()).optional().default([]),
   policeReports: z.array(z.string()).optional().default([]),
   otherDocuments: z.array(z.string()).optional().default([]),
+  tenancyAgreements: z.array(z.string()).optional().default([]),
 }).omit({
   id: true,
   referenceNumber: true,
@@ -105,6 +108,19 @@ export const insertClaimSchema = createInsertSchema(claims, {
     message: "Police reports are required when theft/vandalism is reported to police",
     path: ["policeReports"],
   }
+).refine(
+  (data) => {
+    // Require tenant details and tenancy agreement ONLY when property is marked as investment
+    if (data.isInvestmentProperty) {
+      return data.tenantName && data.tenantPhone && data.tenantEmail && 
+             data.tenancyAgreements && data.tenancyAgreements.length >= 1;
+    }
+    return true;
+  },
+  {
+    message: "Investment properties require tenant contact details and a tenancy agreement",
+    path: ["tenantName"],
+  }
 );
 
 // Step-by-step form schemas for frontend validation
@@ -116,16 +132,33 @@ export const step1Schema = z.object({
 });
 
 export const step2Schema = z.object({
-  propertyAddress: z.string().min(1, "Please select an address from Google Places"),
+  propertyAddress: z.string().min(1, "Please select an address using the search"),
   propertyBlock: z.string().optional(),
-  propertyPlaceId: z.string().min(1, "Please select an address from Google Places"),
+  propertyPlaceId: z.string().min(1, "Please select an address using the search"),
   propertyConstructionAge: z.string().optional(),
   propertyConstructionType: z.string().optional(),
 });
 
 export const step3Schema = z.object({
   incidentDate: z.date().optional().default(new Date()),
-  incidentType: z.enum(["building_damage", "theft", "vandalism", "sublet"]).optional().default("building_damage"),
+  incidentType: z.enum([
+    "fire",
+    "lightning", 
+    "explosion",
+    "aircraft",
+    "riot",
+    "civil_commotion",
+    "strikers_locked_out_workers",
+    "malicious_persons",
+    "theft_or_attempted_theft",
+    "earthquake",
+    "storm",
+    "flood",
+    "escape_of_water",
+    "escape_of_oil",
+    "impact_by_vehicle_or_animal",
+    "leakage_of_oil_from_heating"
+  ]).optional().default("fire"),
   incidentDescription: z.string().optional().default("Test incident description"),
 });
 
@@ -143,9 +176,10 @@ export const step5Schema = z.object({
 });
 
 export const step6Schema = z.object({
-  hasSublet: z.boolean().optional().default(false),
-  subletDescription: z.string().optional(),
-  subletEvidence: z.string().optional(),
+  isInvestmentProperty: z.boolean().optional().default(false),
+  tenantName: z.string().optional(),
+  tenantPhone: z.string().optional(),
+  tenantEmail: z.string().optional(),
 });
 
 export const step7Schema = z.object({
@@ -154,6 +188,7 @@ export const step7Schema = z.object({
   invoices: z.array(z.string()).optional().default([]),
   policeReports: z.array(z.string()).optional().default([]),
   otherDocuments: z.array(z.string()).optional().default([]),
+  tenancyAgreements: z.array(z.string()).optional().default([]),
 });
 
 export const step8Schema = z.object({

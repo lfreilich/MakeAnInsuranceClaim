@@ -29,7 +29,7 @@ export function Step3IncidentDetails({ defaultValues, onNext, onBack }: Step3Inc
     defaultValues: {
       incidentDate: defaultValues.incidentDate ? new Date(defaultValues.incidentDate) : new Date(),
       incidentDescription: defaultValues.incidentDescription || '',
-      incidentType: defaultValues.incidentType || 'building_damage',
+      incidentType: defaultValues.incidentType || 'fire',
     },
   });
 
@@ -127,10 +127,22 @@ export function Step3IncidentDetails({ defaultValues, onNext, onBack }: Step3Inc
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="building_damage">Building Damage</SelectItem>
-                    <SelectItem value="theft">Theft</SelectItem>
-                    <SelectItem value="vandalism">Vandalism</SelectItem>
-                    <SelectItem value="sublet">Subletting Issue</SelectItem>
+                    <SelectItem value="fire">Fire</SelectItem>
+                    <SelectItem value="lightning">Lightning</SelectItem>
+                    <SelectItem value="explosion">Explosion</SelectItem>
+                    <SelectItem value="aircraft">Aircraft</SelectItem>
+                    <SelectItem value="riot">Riot</SelectItem>
+                    <SelectItem value="civil_commotion">Civil commotion</SelectItem>
+                    <SelectItem value="strikers_locked_out_workers">Strikers / locked-out workers</SelectItem>
+                    <SelectItem value="malicious_persons">Malicious persons</SelectItem>
+                    <SelectItem value="theft_or_attempted_theft">Theft or attempted theft</SelectItem>
+                    <SelectItem value="earthquake">Earthquake</SelectItem>
+                    <SelectItem value="storm">Storm</SelectItem>
+                    <SelectItem value="flood">Flood</SelectItem>
+                    <SelectItem value="escape_of_water">Escape of water</SelectItem>
+                    <SelectItem value="escape_of_oil">Escape of oil</SelectItem>
+                    <SelectItem value="impact_by_vehicle_or_animal">Impact by vehicle or animal</SelectItem>
+                    <SelectItem value="leakage_of_oil_from_heating">Leakage of oil from fixed heating installation</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
