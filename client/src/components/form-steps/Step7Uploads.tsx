@@ -70,24 +70,41 @@ export function Step7Uploads({ defaultValues, formData, onNext, onBack }: Step7U
   });
 
   const handleFileUpload = async (file: File): Promise<string> => {
-    // Get presigned URL from backend
-    const { uploadURL } = await apiRequest("POST", "/api/objects/upload", {});
-    
-    // Upload directly to object storage
-    const uploadResponse = await fetch(uploadURL, {
-      method: 'PUT',
-      body: file,
-      headers: {
-        'Content-Type': file.type,
-      },
-    });
+    try {
+      // Get presigned URL from backend
+      const response = await apiRequest("POST", "/api/objects/upload", {});
+      const data = await response.json() as { uploadURL: string };
+      
+      if (!data || !data.uploadURL) {
+        throw new Error('Failed to get upload URL from server');
+      }
+      
+      const uploadURL = data.uploadURL;
+      
+      // Upload directly to object storage
+      const uploadResponse = await fetch(uploadURL, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type,
+        },
+      });
 
-    if (!uploadResponse.ok) {
-      throw new Error('Upload failed');
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed with status: ${uploadResponse.status}`);
+      }
+
+      // Return the uploaded file path (remove query parameters)
+      const filePath = uploadURL.split('?')[0];
+      if (!filePath) {
+        throw new Error('Invalid upload URL returned');
+      }
+      
+      return filePath;
+    } catch (error) {
+      console.error('File upload error:', error);
+      throw new Error(`Failed to upload file: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-
-    // Return the uploaded file path
-    return uploadURL.split('?')[0];
   };
 
   const onSubmit = (data: Step7Data) => {

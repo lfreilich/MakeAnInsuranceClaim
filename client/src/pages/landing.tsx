@@ -9,7 +9,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative h-[80vh] min-h-[600px] w-full overflow-hidden">
+      <section className="relative min-h-[500px] sm:min-h-[600px] lg:min-h-[700px] w-full overflow-hidden py-12 sm:py-16 lg:py-20">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroImage})` }}
