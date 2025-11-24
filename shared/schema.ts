@@ -1,13 +1,54 @@
 // Database schema for insurance claim portal
-import { pgTable, varchar, text, timestamp, boolean, serial } from "drizzle-orm/pg-core";
+import { pgTable, varchar, text, timestamp, boolean, serial, integer, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
+
+// Users table - for admin staff attribution
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  replitUserId: varchar("replit_user_id", { length: 255 }).unique(),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  role: varchar("role", { length: 50 }).notNull().default("admin"),
+  active: boolean("active").notNull().default(true),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Insurance Policies table - multiple policies per building
+export const insurancePolicies = pgTable("insurance_policies", {
+  id: serial("id").primaryKey(),
+  policyNumber: varchar("policy_number", { length: 100 }).notNull().unique(),
+  policyName: varchar("policy_name", { length: 255 }).notNull(),
+  insurerName: varchar("insurer_name", { length: 255 }).notNull(),
+  coverageType: varchar("coverage_type", { length: 100 }).notNull(), // e.g., "Buildings", "Public Liability"
+  excessAmount: integer("excess_amount"), // Deductible amount in pence
+  policyStartDate: timestamp("policy_start_date"),
+  policyEndDate: timestamp("policy_end_date"),
+  buildingAddress: text("building_address"), // Can be multiple buildings
+  active: boolean("active").notNull().default(true),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
 
 // Claims table
 export const claims = pgTable("claims", {
   id: serial("id").primaryKey(),
   referenceNumber: varchar("reference_number", { length: 50 }).notNull().unique(),
   status: varchar("status", { length: 50 }).notNull().default("submitted"),
+  
+  // Workflow & Assignment
+  currentStage: varchar("current_stage", { length: 50 }).notNull().default("new"),
+  handlerUserId: integer("handler_user_id"),
+  policyId: integer("policy_id"),
+  
+  // Insurer Details
+  insurerClaimRef: varchar("insurer_claim_ref", { length: 100 }),
+  insurerSubmittedAt: timestamp("insurer_submitted_at"),
+  
+  // Closure
+  closedAt: timestamp("closed_at"),
+  closeReason: text("close_reason"),
   
   // Claimant Details
   claimantName: varchar("claimant_name", { length: 255 }).notNull(),
@@ -61,11 +102,68 @@ export const claims = pgTable("claims", {
   
   // Timestamps
   submittedAt: timestamp("submitted_at").notNull().defaultNow(),
+  lastUpdatedAt: timestamp("last_updated_at").notNull().defaultNow(),
+});
+
+// Audit Logs table - track ALL actions on claims
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  claimId: integer("claim_id").notNull(),
+  userId: integer("user_id"), // null for system actions
+  action: varchar("action", { length: 100 }).notNull(), // e.g., "status_change", "note_added", "file_uploaded"
+  entityType: varchar("entity_type", { length: 50 }).notNull(), // "claim", "note", "payment"
+  entityId: integer("entity_id"),
+  changes: jsonb("changes"), // Store before/after values
+  ipAddress: varchar("ip_address", { length: 50 }),
+  userAgent: text("user_agent"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Claim Status Transitions table - dedicated tracking of status changes
+export const claimStatusTransitions = pgTable("claim_status_transitions", {
+  id: serial("id").primaryKey(),
+  claimId: integer("claim_id").notNull(),
+  fromStatus: varchar("from_status", { length: 50 }),
+  toStatus: varchar("to_status", { length: 50 }).notNull(),
+  userId: integer("user_id"),
+  note: text("note"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+// Claim Notes table - comments and internal notes
+export const claimNotes = pgTable("claim_notes", {
+  id: serial("id").primaryKey(),
+  claimId: integer("claim_id").notNull(),
+  authorUserId: integer("author_user_id").notNull(),
+  visibility: varchar("visibility", { length: 20 }).notNull().default("internal"), // "internal" or "insurer"
+  noteType: varchar("note_type", { length: 50 }).notNull().default("general"), // "general", "chaser", "escalation"
+  body: text("body").notNull(),
+  followUpDate: timestamp("follow_up_date"),
+  autoChaserFlag: boolean("auto_chaser_flag").notNull().default(false),
+  completed: boolean("completed").notNull().default(false),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
 // TypeScript types
+export type User = typeof users.$inferSelect;
+export type InsertUser = typeof users.$inferInsert;
+
+export type InsurancePolicy = typeof insurancePolicies.$inferSelect;
+export type InsertInsurancePolicy = typeof insurancePolicies.$inferInsert;
+
 export type Claim = typeof claims.$inferSelect;
 export type InsertClaim = typeof claims.$inferInsert;
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = typeof auditLogs.$inferInsert;
+
+export type ClaimStatusTransition = typeof claimStatusTransitions.$inferSelect;
+export type InsertClaimStatusTransition = typeof claimStatusTransitions.$inferInsert;
+
+export type ClaimNote = typeof claimNotes.$inferSelect;
+export type InsertClaimNote = typeof claimNotes.$inferInsert;
 
 // Zod schemas for validation
 export const insertClaimSchema = createInsertSchema(claims, {
