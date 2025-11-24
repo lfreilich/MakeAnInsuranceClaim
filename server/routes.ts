@@ -89,6 +89,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update claim status (admin endpoint)
+  app.patch("/api/claims/:id/status", async (req: Request, res: Response) => {
+    try {
+      const claimId = parseInt(req.params.id);
+      const { status } = req.body;
+
+      if (!status || !["pending", "approved", "rejected"].includes(status)) {
+        res.status(400).json({ error: "Invalid status value" });
+        return;
+      }
+
+      const updatedClaim = await storage.updateClaimStatus(claimId, status);
+      if (!updatedClaim) {
+        res.status(404).json({ error: "Claim not found" });
+        return;
+      }
+
+      res.json(updatedClaim);
+    } catch (error: any) {
+      console.error("Update claim status error:", error);
+      res.status(500).json({ error: error.message || "Failed to update claim status" });
+    }
+  });
+
   // Get presigned URL for file upload
   app.post("/api/objects/upload", async (req: Request, res: Response) => {
     try {

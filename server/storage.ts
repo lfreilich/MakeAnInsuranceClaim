@@ -8,6 +8,7 @@ export interface IStorage {
   getClaim(id: string): Promise<Claim | undefined>;
   getClaimByReference(referenceNumber: string): Promise<Claim | undefined>;
   getAllClaims(): Promise<Claim[]>;
+  updateClaimStatus(id: number, status: string): Promise<Claim | undefined>;
 }
 
 // Generate a unique claim reference number
@@ -48,6 +49,15 @@ export class DatabaseStorage implements IStorage {
 
   async getAllClaims(): Promise<Claim[]> {
     return await db.select().from(claims);
+  }
+
+  async updateClaimStatus(id: number, status: string): Promise<Claim | undefined> {
+    const [updatedClaim] = await db
+      .update(claims)
+      .set({ status })
+      .where(eq(claims.id, id))
+      .returning();
+    return updatedClaim || undefined;
   }
 }
 
