@@ -200,7 +200,7 @@ export default function LandingPage() {
             
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-6">
-                <h3 className="text-lg font-bold mb-4 text-amber-400">Police Welfare Entry & Squatter Damage</h3>
+                <h3 className="text-lg font-bold mb-4 text-amber-400">Police Entry & Squatter Cover</h3>
                 <div className="flex gap-4">
                   <span className="text-4xl font-bold text-amber-500 flex-shrink-0 w-10 leading-none">03</span>
                   <p className="text-sm text-white/80 leading-relaxed">
