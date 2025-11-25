@@ -345,6 +345,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Database diagnostic endpoint (temporary - for debugging production issues)
+  app.get("/api/debug/db-check", requireStaff, async (req: Request, res: Response) => {
+    try {
+      const { Pool } = await import("@neondatabase/serverless");
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+      
+      // Get claims count
+      const countResult = await pool.query("SELECT COUNT(*) as count FROM claims");
+      const claimsCount = countResult.rows[0].count;
+      
+      // Get column names
+      const columnsResult = await pool.query(
+        "SELECT column_name FROM information_schema.columns WHERE table_name = 'claims' ORDER BY ordinal_position"
+      );
+      const columns = columnsResult.rows.map((r: any) => r.column_name);
+      
+      // Get first claim ID if any exist
+      const sampleResult = await pool.query("SELECT id, reference_number, status FROM claims LIMIT 3");
+      
+      await pool.end();
+      
+      res.json({
+        claimsCount,
+        columnCount: columns.length,
+        columns,
+        sampleClaims: sampleResult.rows,
+        databaseUrl: process.env.DATABASE_URL ? "configured" : "missing"
+      });
+    } catch (error: any) {
+      console.error("DB check error:", error);
+      res.status(500).json({ error: error.message, stack: error.stack });
+    }
+  });
+
   // Get all claims (admin endpoint)
   app.get("/api/claims", requireStaff, async (req: Request, res: Response) => {
     try {
