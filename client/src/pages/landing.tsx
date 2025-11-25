@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Shield, Clock, FileCheck, Building2, Mail, Phone, AlertCircle, LogIn, Home, Bug, ShieldAlert, Droplets, TrendingUp, Users, CheckCircle2 } from "lucide-react";
+import { Shield, Clock, FileCheck, Mail, Phone, AlertCircle, LogIn, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import heroImage from "@assets/generated_images/luxury_apartment_building_hero.png";
@@ -175,11 +175,9 @@ export default function LandingPage() {
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-blue-500/30 flex items-center justify-center flex-shrink-0">
-                    <Home className="w-6 h-6 text-amber-400" />
-                  </div>
+                  <span className="text-3xl font-bold text-amber-500 flex-shrink-0">01</span>
                   <div>
-                    <h3 className="font-semibold mb-2 text-amber-400">30% Alternative Accommodation Cover</h3>
+                    <h3 className="font-semibold mb-2 text-amber-400">30% Alternative Accommodation</h3>
                     <p className="text-sm text-white/90">
                       If your flat becomes uninhabitable, the policy provides significantly higher-than-standard 
                       limits to ensure you're re-housed comfortably while repairs are completed.
@@ -192,11 +190,9 @@ export default function LandingPage() {
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-blue-500/30 flex items-center justify-center flex-shrink-0">
-                    <Bug className="w-6 h-6 text-amber-400" />
-                  </div>
+                  <span className="text-3xl font-bold text-amber-500 flex-shrink-0">02</span>
                   <div>
-                    <h3 className="font-semibold mb-2 text-amber-400">Japanese Knotweed & Fly-Tipping Cover</h3>
+                    <h3 className="font-semibold mb-2 text-amber-400">Knotweed & Fly-Tipping Cover</h3>
                     <p className="text-sm text-white/90">
                       Unusual and highly valuable protections that most block policies exclude, keeping the 
                       estate protected from unexpected environmental issues.
@@ -209,9 +205,7 @@ export default function LandingPage() {
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-blue-500/30 flex items-center justify-center flex-shrink-0">
-                    <ShieldAlert className="w-6 h-6 text-amber-400" />
-                  </div>
+                  <span className="text-3xl font-bold text-amber-500 flex-shrink-0">03</span>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">Police Welfare Entry & Squatter Damage</h3>
                     <p className="text-sm text-white/90">
@@ -226,11 +220,9 @@ export default function LandingPage() {
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-blue-500/30 flex items-center justify-center flex-shrink-0">
-                    <Droplets className="w-6 h-6 text-amber-400" />
-                  </div>
+                  <span className="text-3xl font-bold text-amber-500 flex-shrink-0">04</span>
                   <div>
-                    <h3 className="font-semibold mb-2 text-amber-400">Enhanced Leak Detection (Trace & Access)</h3>
+                    <h3 className="font-semibold mb-2 text-amber-400">Enhanced Leak Detection</h3>
                     <p className="text-sm text-white/90">
                       The policy pays for finding and fixing the source of leaks within walls and ceilings, 
                       protecting you from the most common type of flat-to-flat damage.
@@ -243,9 +235,7 @@ export default function LandingPage() {
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-blue-500/30 flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="w-6 h-6 text-amber-400" />
-                  </div>
+                  <span className="text-3xl font-bold text-amber-500 flex-shrink-0">05</span>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">Day-One Rebuild Protection</h3>
                     <p className="text-sm text-white/90">
@@ -260,9 +250,7 @@ export default function LandingPage() {
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-blue-500/30 flex items-center justify-center flex-shrink-0">
-                    <Users className="w-6 h-6 text-amber-400" />
-                  </div>
+                  <span className="text-3xl font-bold text-amber-500 flex-shrink-0">06</span>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">Composite Insured Protection</h3>
                     <p className="text-sm text-white/90">
