@@ -1,0 +1,111 @@
+
+
+
+
+
+MakeAnInsuranceClaim
+
+
+
+
+Republish
+
+
+
+AI
+Files
+
+
+
+Commands
+Search
+Packager files
+Config files
+
+
+
+/
+
+
+
+Theme
+
+
+All Databases
+
+Production Database
+Any changes made here will immediately impact your live application.
+Enable Editing
+
+Unexpected error happened 😕
+
+ee76cdd18e1a4f6b938c75a08043dcda
+
+
+We're already looking into it! Feel free to reach out to our support team, make sure to copy error ID
+
+Invalid response from Replit driver
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS current_stage varchar(50) DEFAULT 'new';
+
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS handler_user_id integer;
+
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS policy_id integer;
+
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS loss_assessor_id integer;
+
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS insurer_claim_ref varchar(100);
+
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS insurer_submitted_at timestamp;
+
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS insurer_response_date timestamp;
+
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS closed_at timestamp;
+
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS close_reason text;
+
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS property_place_id varchar(500);
+
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS property_construction_age varchar(100);
+
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS property_construction_type varchar(255);
+
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS late_notification_acknowledged boolean DEFAULT false;
+
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS late_notification_audit_log jsonb;
+
+ALTER TABLE claims
+ADD COLUMN IF NOT EXISTS last_updated_at timestamp DEFAULT now();
+{
+  "sql": "ALTER TABLE claims ADD COLUMN IF NOT EXISTS current_stage varchar(50) DEFAULT 'new';\n\nALTER TABLE claims ADD COLUMN IF NOT EXISTS handler_user_id integer;\n\nALTER TABLE claims ADD COLUMN IF NOT EXISTS policy_id integer;\n\nALTER TABLE claims ADD COLUMN IF NOT EXISTS loss_assessor_id integer;\n\nALTER TABLE claims ADD COLUMN IF NOT EXISTS insurer_claim_ref varchar(100);\n\nALTER TABLE claims ADD COLUMN IF NOT EXISTS insurer_submitted_at timestamp;\n\nALTER TABLE claims ADD COLUMN IF NOT EXISTS insurer_response_date timestamp;\n\nALTER TABLE claims ADD COLUMN IF NOT EXISTS closed_at timestamp;\n\nALTER TABLE claims ADD COLUMN IF NOT EXISTS close_reason text;\n\nALTER TABLE claims ADD COLUMN IF NOT EXISTS property_place_id varchar(500);\n\nALTER TABLE claims ADD COLUMN IF NOT EXISTS property_construction_age varchar(100);\n\nALTER TABLE claims ADD COLUMN IF NOT EXISTS property_construction_type varchar(255);\n\nALTER TABLE claims ADD COLUMN IF NOT EXISTS late_notification_acknowledged boolean DEFAULT false;\n\nALTER TABLE claims ADD COLUMN IF NOT EXISTS late_notification_audit_log jsonb;\n\nALTER TABLE claims ADD COLUMN IF NOT EXISTS last_updated_at timestamp DEFAULT now();"
+}
+[
+  "[Object]",
+  "[Object]",
+  "[Object]",
+  "[Object]",
+  "[Object]",
+  "[Object]",
+  "[Object]",
+  "[Object]",
+  "[Object]",
+  "[Object]",
+  "[Object]",
+  "[Object]",
+  "[Object]",
+  "[Object]",
+  "[Object]"
+]
