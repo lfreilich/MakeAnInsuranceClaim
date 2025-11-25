@@ -339,11 +339,11 @@ export default function LandingPage() {
                 <div>
                   <p className="font-semibold mb-1 text-amber-400">24/7 Emergency</p>
                   <a
-                    href="tel:+442079461234"
+                    href="tel:+442070434260"
                     className="text-white hover:text-amber-300 hover:underline"
                     data-testid="link-phone"
                   >
-                    020 7946 1234
+                    020 7043 4260
                   </a>
                 </div>
               </CardContent>
