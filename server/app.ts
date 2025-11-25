@@ -13,6 +13,7 @@ import ws from "ws";
 
 import { registerRoutes } from "./routes";
 import { backupToS3 } from "./backup-to-s3";
+import { runAutoMigrations } from "./auto-migrate";
 
 // Configure WebSocket for Neon serverless driver
 neonConfig.webSocketConstructor = ws;
@@ -102,6 +103,9 @@ app.use((req, res, next) => {
 export default async function runApp(
   setup: (app: Express, server: Server) => Promise<void>,
 ) {
+  // Run auto-migrations to ensure database schema is up-to-date
+  await runAutoMigrations();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
