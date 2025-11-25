@@ -91,6 +91,8 @@ export default function AdminDashboard() {
           if (data.user) {
             setIsAuthenticated(true);
             setUser(data.user);
+            // Invalidate all queries to force refetch with fresh session
+            queryClient.invalidateQueries();
           }
         }
       } catch (error) {
