@@ -143,7 +143,7 @@ export default function LandingPage() {
       <section className="py-20 px-6">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Why Your Building's Insurance Is Exceptional</h2>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Why Your Building's Insurance Is Exceptional<span className="text-primary">*</span></h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
               Moreland-managed buildings benefit from a premium, portfolio-grade insurance policy that includes 
               protections rarely found in standard block of flats cover. This means faster reinstatement, 
@@ -273,6 +273,18 @@ export default function LandingPage() {
               </div>
             </CardContent>
           </Card>
+          
+          {/* Disclaimer */}
+          <div className="mt-8 pt-6 border-t border-border/50">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              <span className="text-primary font-medium">*</span> The buildings are insured under Moreland's bespoke policy wording, 
+              produced in conjunction with the insurer, underwriters, and our specialist broker team. Coverage is subject to the 
+              full terms, conditions, limits, and exclusions contained within the insurer's official policy documents. This summary 
+              is provided for general information only and does not replace or override the insurer's wording, schedule, or endorsements. 
+              Nothing on this page constitutes insurance advice. For full details of your building's insurance cover, please refer to 
+              the complete policy documentation or contact our insurance administration team.
+            </p>
+          </div>
         </div>
       </section>
       
