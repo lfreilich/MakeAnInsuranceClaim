@@ -4,7 +4,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { ProgressIndicator } from "../components/ProgressIndicator";
-import { SubmissionOverlay } from "../components/SubmissionOverlay";
 import { Step1ClaimantDetails } from "../components/form-steps/Step1ClaimantDetails";
 import { Step2PropertyDetails } from "../components/form-steps/Step2PropertyDetails";
 import { Step3IncidentDetails } from "../components/form-steps/Step3IncidentDetails";
@@ -90,9 +89,6 @@ export default function ClaimForm() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Submission Progress Overlay */}
-      <SubmissionOverlay isVisible={isSubmitting} />
-
       {/* Header with Building Image */}
       <div className="relative h-48 sm:h-64 w-full overflow-hidden">
         <div

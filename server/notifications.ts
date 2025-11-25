@@ -50,47 +50,33 @@ async function sendSMS(recipient: string, message: string): Promise<SMSResult> {
   }
 
   // Clean phone number - remove spaces, dashes, and plus sign
-  let cleanRecipient = recipient.replace(/[\s\-\+]/g, '');
+  const cleanRecipient = recipient.replace(/[\s\-\+]/g, '');
   
-  // Convert to international format if it's a UK number with leading 0
-  // Only convert if it starts with 0 and is 10-11 digits (UK format)
-  if (cleanRecipient.startsWith('0') && /^0\d{9,10}$/.test(cleanRecipient)) {
-    cleanRecipient = '44' + cleanRecipient.substring(1);
-  }
-  // If it doesn't start with a country code and isn't a UK 0-prefixed number, assume it's already international
-  // Otherwise leave it as-is
+  // Ensure it's in international format (remove leading 0 if present)
+  const internationalRecipient = cleanRecipient.startsWith('0') 
+    ? '44' + cleanRecipient.substring(1) 
+    : cleanRecipient;
 
   try {
     const params = new URLSearchParams({
       username: INTELLISMS_USERNAME,
       password: INTELLISMS_PASSWORD,
-      recipient: cleanRecipient,
+      recipient: internationalRecipient,
       sender: INTELLISMS_SENDER_ID,
       text: message,
       replyTo: 'log',
       encoding: 'gsm',
     });
 
-    // IntelliSMS API returns JSON for REST endpoint
     const response = await fetch(`${INTELLISMS_API_URL}?${params.toString()}`, {
       method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`IntelliSMS API error: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new Error(`IntelliSMS API error: ${response.status} ${response.statusText}`);
     }
 
-    // Parse response as JSON
     const result = await response.json();
-    
-    // Check if message was submitted successfully (status 10 means accepted)
-    if (result.messageStatus && result.messageStatus !== 10) {
-      console.warn(`IntelliSMS message status: ${result.messageStatus}`);
-    }
     
     return {
       success: true,
@@ -101,14 +87,6 @@ async function sendSMS(recipient: string, message: string): Promise<SMSResult> {
     console.error("Failed to send SMS:", error);
     return { success: false, error: error.message };
   }
-}
-
-/**
- * Send a verification code via SMS
- */
-export async function sendVerificationCodeSMS(phone: string, code: string): Promise<SMSResult> {
-  const message = `Your Moreland Estate verification code is: ${code}. This code expires in 10 minutes.`;
-  return await sendSMS(phone, message);
 }
 
 /**

@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Shield, Clock, FileCheck, Building2, Mail, Phone, AlertCircle, LogIn } from "lucide-react";
+import { Shield, Clock, FileCheck, Building2, Mail, Phone, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import heroImage from "@assets/generated_images/luxury_apartment_building_hero.png";
@@ -57,20 +57,10 @@ export default function LandingPage() {
                 Start Your Claim
               </Button>
             </Link>
-            <Link href="/admin">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6 bg-white/10 border-white/30 text-white hover:bg-white/20" data-testid="button-login">
-                <LogIn className="w-5 h-5 mr-2" />
-                Login
-              </Button>
-            </Link>
           </div>
           
           <p className="text-sm text-slate-400 mt-4">
-            <span>Average completion time: 15 minutes</span>
-            <span className="mx-2">|</span>
-            <Link href="/admin" className="text-blue-300 hover:text-blue-200 hover:underline">
-              Already submitted a claim? Track it here
-            </Link>
+            Average completion time: 15 minutes
           </p>
           
           {/* Trust Badges */}

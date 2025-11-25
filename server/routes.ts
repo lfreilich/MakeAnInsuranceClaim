@@ -5,10 +5,6 @@ import { storage } from "./storage";
 import { ObjectStorageService } from "./objectStorage";
 import { enhanceIncidentDescription } from "./openai";
 import { sendClaimConfirmationEmail, sendVerificationCodeEmail } from "./email";
-import { notifyClaimCreated, notifyClaimUpdated, notifyClaimStatusChanged, sendVerificationCodeSMS } from "./notifications";
-import { db } from "./db";
-import { verificationCodes } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
 import { 
   insertClaimSchema, 
   type InsertClaim,
@@ -26,132 +22,25 @@ import {
 const objectStorageService = new ObjectStorageService();
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Authentication: Check user status (phone registered, staff status)
-  app.post("/api/auth/check-user", async (req: Request, res: Response) => {
-    try {
-      const { email } = z.object({ email: z.string().email() }).parse(req.body);
-      
-      const normalizedEmail = email.toLowerCase();
-      
-      // Determine if user is staff based on email domain
-      const isStaff = normalizedEmail.endsWith('@morelandestate.co.uk') || normalizedEmail.endsWith('@mnninsure.com');
-      
-      // Get or create user to avoid deadlock
-      const user = await storage.getOrCreateUser(normalizedEmail);
-      
-      res.status(200).json({
-        exists: !!user,
-        hasPhone: !!(user?.phone),
-        isStaff,
-        requiresPhoneRegistration: isStaff && !user?.phone,
-      });
-    } catch (error: any) {
-      console.error("Check user error:", error);
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: "Invalid email address", details: error.errors });
-      } else {
-        res.status(500).json({ error: "Failed to check user" });
-      }
-    }
-  });
-
-  // Authentication: Register phone number
-  app.post("/api/auth/register-phone", async (req: Request, res: Response) => {
-    try {
-      const { email, phone } = z.object({
-        email: z.string().email(),
-        phone: z.string().min(10).regex(/^[0-9+\s\-()]+$/, "Phone number can only contain digits, +, spaces, hyphens, and parentheses"),
-      }).parse(req.body);
-      
-      // Normalize phone number - remove spaces, hyphens, parentheses
-      const normalizedPhone = phone.replace(/[\s\-()]/g, '');
-      
-      // Validate that it's a reasonable phone number (10-15 digits optionally starting with +)
-      if (!/^\+?\d{10,15}$/.test(normalizedPhone)) {
-        res.status(400).json({ error: "Invalid phone number format" });
-        return;
-      }
-      
-      // Get or create user
-      const user = await storage.getOrCreateUser(email.toLowerCase());
-      
-      // Update phone number
-      await storage.updateUserPhone(email.toLowerCase(), normalizedPhone);
-      
-      res.status(200).json({ message: "Phone number registered successfully" });
-    } catch (error: any) {
-      console.error("Register phone error:", error);
-      if (error instanceof z.ZodError) {
-        res.status(400).json({ error: "Invalid request", details: error.errors });
-      } else {
-        res.status(500).json({ error: "Failed to register phone number" });
-      }
-    }
-  });
-
   // Authentication: Request verification code
   app.post("/api/auth/request-code", async (req: Request, res: Response) => {
     try {
-      const { email, claimId, deliveryMethod } = z.object({
-        email: z.string().email(),
-        claimId: z.number().optional(),
-        deliveryMethod: z.enum(['email', 'sms']).optional().default('email'),
-      }).parse(req.body);
+      const { email, claimId } = requestCodeSchema.parse(req.body);
       
-      const normalizedEmail = email.toLowerCase();
+      // Generate verification code
+      const { code, expiresAt } = await storage.createVerificationCode(email, claimId);
       
-      // If SMS delivery requested, check if user has a phone number
-      let finalDeliveryMethod: 'email' | 'sms' = deliveryMethod || 'email';
-      
-      if (deliveryMethod === 'sms') {
-        const user = await storage.getUserByEmail(normalizedEmail);
-        if (!user?.phone) {
-          res.status(400).json({ error: "No phone number registered for SMS delivery" });
-          return;
-        }
-      }
-      
-      // Generate verification code with intended delivery method
-      const { code, expiresAt } = await storage.createVerificationCode(normalizedEmail, claimId, finalDeliveryMethod);
-      
-      // Send verification code via chosen method
-      if (finalDeliveryMethod === 'sms') {
-        const user = await storage.getUserByEmail(normalizedEmail);
-        if (user?.phone) {
-          const result = await sendVerificationCodeSMS(user.phone, code);
-          if (!result.success) {
-            // Fall back to email if SMS fails - update delivery method in DB
-            await db.update(verificationCodes)
-              .set({ deliveryMethod: 'email' })
-              .where(and(
-                eq(verificationCodes.email, normalizedEmail),
-                eq(verificationCodes.code, code)
-              ));
-            
-            await sendVerificationCodeEmail(email, code);
-            res.status(200).json({
-              message: "SMS failed, verification code sent to your email",
-              expiresAt,
-              deliveryMethod: 'email',
-            });
-            return;
-          }
-        }
-      } else {
-        await sendVerificationCodeEmail(email, code);
-      }
+      // Send verification code via email
+      await sendVerificationCodeEmail(email, code);
       
       res.status(200).json({ 
-        message: finalDeliveryMethod === 'sms' 
-          ? "Verification code sent via SMS" 
-          : "Verification code sent to your email",
+        message: "Verification code sent to your email",
         expiresAt,
-        deliveryMethod: finalDeliveryMethod,
       });
     } catch (error: any) {
       console.error("Request code error:", error);
       if (error instanceof z.ZodError) {
-        res.status(400).json({ error: "Invalid request", details: error.errors });
+        res.status(400).json({ error: "Invalid email address", details: error.errors });
       } else {
         res.status(500).json({ error: "Failed to send verification code" });
       }
@@ -162,10 +51,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/verify-code", async (req: Request, res: Response) => {
     try {
       const { email, code } = verifyCodeSchema.parse(req.body);
-      const normalizedEmail = email.toLowerCase();
       
       // Verify the code
-      const isValid = await storage.verifyCode(normalizedEmail, code);
+      const isValid = await storage.verifyCode(email, code);
       
       if (!isValid) {
         res.status(401).json({ error: "Invalid or expired verification code" });
@@ -173,12 +61,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get user access level
-      const accessLevel = await storage.getUserAccessLevel(normalizedEmail);
+      const accessLevel = await storage.getUserAccessLevel(email);
       
       // Store in session
       if (req.session) {
         req.session.user = {
-          email: normalizedEmail,
+          email,
           role: accessLevel.role,
           claimAccess: accessLevel.claimAccess || [],
         };
@@ -187,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(200).json({
         message: "Authentication successful",
         user: {
-          email: normalizedEmail,
+          email,
           role: accessLevel.role,
           claimAccess: accessLevel.claimAccess || [],
         },
@@ -236,11 +124,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Send confirmation email (non-blocking)
       sendClaimConfirmationEmail(claim).catch((error) => {
         console.error("Failed to send confirmation email:", error);
-      });
-
-      // Send notifications to staff and claimant (non-blocking)
-      notifyClaimCreated(claim).catch((error) => {
-        console.error("Failed to send claim notifications:", error);
       });
 
       res.status(201).json({
@@ -324,23 +207,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return;
       }
 
-      // Get current claim to capture old status
-      const currentClaim = await storage.getClaim(claimId);
-      if (!currentClaim) {
-        res.status(404).json({ error: "Claim not found" });
-        return;
-      }
-
       const updatedClaim = await storage.updateClaimStatus(claimId, status);
       if (!updatedClaim) {
         res.status(404).json({ error: "Claim not found" });
         return;
       }
-
-      // Send notifications (non-blocking)
-      notifyClaimStatusChanged(updatedClaim, currentClaim.status, status).catch((error) => {
-        console.error("Failed to send status change notifications:", error);
-      });
 
       res.json(updatedClaim);
     } catch (error: any) {

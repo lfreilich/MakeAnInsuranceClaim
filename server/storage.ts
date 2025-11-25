@@ -45,8 +45,6 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   getAllUsers(): Promise<User[]>;
-  updateUserPhone(email: string, phone: string): Promise<User | undefined>;
-  getOrCreateUser(email: string, name?: string): Promise<User>;
   
   // Policy operations
   createPolicy(policy: Omit<InsertInsurancePolicy, 'id' | 'createdAt'>): Promise<InsurancePolicy>;
@@ -85,7 +83,7 @@ export interface IStorage {
   updatePaymentStatus(id: number, status: string, paidAt?: Date, transactionReference?: string): Promise<Payment | undefined>;
   
   // Verification code operations
-  createVerificationCode(email: string, claimId?: number, deliveryMethod?: 'email' | 'sms'): Promise<{ code: string; expiresAt: Date }>;
+  createVerificationCode(email: string, claimId?: number): Promise<{ code: string; expiresAt: Date }>;
   verifyCode(email: string, code: string): Promise<boolean>;
   cleanupExpiredCodes(): Promise<void>;
   getUserAccessLevel(email: string, claimId?: number): Promise<{
@@ -212,33 +210,6 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).where(eq(users.active, true));
-  }
-
-  async updateUserPhone(email: string, phone: string): Promise<User | undefined> {
-    const [updatedUser] = await db
-      .update(users)
-      .set({ phone })
-      .where(eq(users.email, email))
-      .returning();
-    return updatedUser || undefined;
-  }
-
-  async getOrCreateUser(email: string, name?: string): Promise<User> {
-    // Try to get existing user
-    const existingUser = await this.getUserByEmail(email);
-    if (existingUser) {
-      return existingUser;
-    }
-
-    // Create new user if doesn't exist
-    const userData = {
-      email,
-      name: name || email.split('@')[0], // Use email prefix as default name
-      role: 'admin', // Default role
-      active: true,
-    };
-
-    return await this.createUser(userData);
   }
 
   // Policy operations
@@ -555,7 +526,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Verification code operations
-  async createVerificationCode(email: string, claimId?: number, deliveryMethod: 'email' | 'sms' = 'email'): Promise<{ code: string; expiresAt: Date }> {
+  async createVerificationCode(email: string, claimId?: number): Promise<{ code: string; expiresAt: Date }> {
     // Generate 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
@@ -571,7 +542,6 @@ export class DatabaseStorage implements IStorage {
     await db.insert(verificationCodes).values({
       email,
       code,
-      deliveryMethod,
       expiresAt,
       claimId: claimId || null,
       verified: false,
@@ -616,15 +586,13 @@ export class DatabaseStorage implements IStorage {
 
   async getUserAccessLevel(email: string, claimId?: number): Promise<{
     role: 'staff' | 'tenant' | 'assessor' | 'none';
-    claimAccess: number[];
+    claimAccess?: number[];
   }> {
-    const emailLower = email.toLowerCase().trim();
-    console.log(`[getUserAccessLevel] Checking access for email: ${emailLower}`);
+    const emailLower = email.toLowerCase();
 
     // Check if staff domain (@mnninsure.com or @morelandestate.co.uk)
     if (emailLower.endsWith('@mnninsure.com') || emailLower.endsWith('@morelandestate.co.uk')) {
-      console.log(`[getUserAccessLevel] User is staff`);
-      return { role: 'staff', claimAccess: [] };
+      return { role: 'staff' };
     }
 
     // Check if loss assessor
@@ -642,11 +610,26 @@ export class DatabaseStorage implements IStorage {
         .where(eq(claims.lossAssessorId, assessor.id));
       
       const claimIds = assignedClaims.map(c => c.id);
-      console.log(`[getUserAccessLevel] User is assessor with ${claimIds.length} assigned claims:`, claimIds);
       return { 
         role: 'assessor', 
         claimAccess: claimIds 
       };
+    }
+
+    // Check if tenant (claimant)
+    if (claimId) {
+      const [claim] = await db
+        .select()
+        .from(claims)
+        .where(eq(claims.id, claimId))
+        .limit(1);
+
+      if (claim && claim.claimantEmail.toLowerCase() === emailLower) {
+        return { 
+          role: 'tenant', 
+          claimAccess: [claimId] 
+        };
+      }
     }
 
     // Check all claims for this email as claimant
@@ -655,19 +638,15 @@ export class DatabaseStorage implements IStorage {
       .from(claims)
       .where(eq(claims.claimantEmail, emailLower));
 
-    console.log(`[getUserAccessLevel] Found ${userClaims.length} claims for tenant email ${emailLower}`);
-    
     if (userClaims.length > 0) {
       const claimIds = userClaims.map(c => c.id);
-      console.log(`[getUserAccessLevel] User is tenant with claim IDs:`, claimIds);
       return { 
         role: 'tenant', 
         claimAccess: claimIds 
       };
     }
 
-    console.log(`[getUserAccessLevel] No access found for email ${emailLower}, returning role: none`);
-    return { role: 'none', claimAccess: [] };
+    return { role: 'none' };
   }
 
   async getClaimsByEmail(email: string): Promise<Claim[]> {
