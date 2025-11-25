@@ -346,6 +346,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public session diagnostic (temporary - for debugging)
+  app.get("/api/debug/session-check", async (req: Request, res: Response) => {
+    res.json({
+      hasSession: !!req.session,
+      hasUser: !!req.session?.user,
+      sessionUser: req.session?.user ? {
+        email: req.session.user.email,
+        role: req.session.user.role,
+        roleLower: req.session.user.role?.toLowerCase(),
+        claimAccessCount: req.session.user.claimAccess?.length || 0,
+      } : null,
+      sessionId: req.sessionID,
+      cookieHeader: req.headers.cookie ? "present" : "missing",
+    });
+  });
+
   // Database diagnostic endpoint (temporary - for debugging production issues)
   app.get("/api/debug/db-check", requireStaff, async (req: Request, res: Response) => {
     try {
