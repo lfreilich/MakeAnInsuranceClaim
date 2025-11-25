@@ -35,14 +35,14 @@ export default function LandingPage() {
           </p>
           
           {/* Facilitator Notice */}
-          <Card className="mb-8 max-w-3xl bg-blue-500/10 border-blue-500/30 backdrop-blur-sm">
+          <Card className="mb-8 max-w-3xl bg-blue-500/20 border-blue-500/30 backdrop-blur-sm">
             <CardContent className="p-6 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-blue-300 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
               <div className="text-left">
-                <p className="text-sm text-blue-100 font-medium mb-1">
+                <p className="text-sm text-amber-400 font-medium mb-1">
                   Please Note:
                 </p>
-                <p className="text-sm text-blue-200">
+                <p className="text-sm text-slate-300">
                   Moreland Estate Management does not make decisions on claims. We act as a facilitator 
                   to ensure your claim reaches the insurers efficiently. All claim decisions are made by 
                   the insurance company's claims team.
@@ -75,17 +75,23 @@ export default function LandingPage() {
           
           {/* Trust Badges */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-12 max-w-3xl">
-            <div className="flex flex-col items-center gap-2 text-white">
-              <Shield className="w-8 h-8 text-blue-400" />
-              <span className="text-sm font-medium">Secure Portal</span>
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-blue-500/30 flex items-center justify-center">
+                <Shield className="w-6 h-6 text-amber-400" />
+              </div>
+              <span className="text-sm font-medium text-amber-400">Secure Portal</span>
             </div>
-            <div className="flex flex-col items-center gap-2 text-white">
-              <Clock className="w-8 h-8 text-blue-400" />
-              <span className="text-sm font-medium">Fast Processing</span>
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-blue-500/30 flex items-center justify-center">
+                <Clock className="w-6 h-6 text-amber-400" />
+              </div>
+              <span className="text-sm font-medium text-amber-400">Fast Processing</span>
             </div>
-            <div className="flex flex-col items-center gap-2 text-white">
-              <FileCheck className="w-8 h-8 text-blue-400" />
-              <span className="text-sm font-medium">Digital Submission</span>
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-12 h-12 rounded-full bg-blue-500/30 flex items-center justify-center">
+                <FileCheck className="w-6 h-6 text-amber-400" />
+              </div>
+              <span className="text-sm font-medium text-amber-400">Digital Submission</span>
             </div>
           </div>
         </div>
