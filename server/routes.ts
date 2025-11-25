@@ -309,7 +309,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if user has access to this claim
       const user = req.session.user!;
-      if (user.role !== 'staff' && !user.claimAccess.includes(claim.id)) {
+      const isStaff = user.role === 'staff' || user.role === 'superuser' || user.role === 'admin';
+      if (!isStaff && !user.claimAccess.includes(claim.id)) {
         res.status(403).json({ error: "Access denied to this claim" });
         return;
       }
@@ -652,7 +653,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check access to this claim
       const user = req.session.user!;
-      if (user.role !== 'staff' && !user.claimAccess.includes(existingNote.claimId)) {
+      const isStaff = user.role === 'staff' || user.role === 'superuser' || user.role === 'admin';
+      if (!isStaff && !user.claimAccess.includes(existingNote.claimId)) {
         res.status(403).json({ error: "Access denied to this claim" });
         return;
       }
