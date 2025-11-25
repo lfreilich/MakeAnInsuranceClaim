@@ -48,12 +48,16 @@ import {
   MessageSquare,
   UserCheck,
   ArrowLeft,
+  CloudUpload,
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
 import type { Claim, User as UserType, InsurancePolicy, AuditLog, ClaimNote } from "@shared/schema";
 import { ClaimDetailsModal } from "@/components/claim-details-modal";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminDashboard() {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
@@ -116,6 +120,33 @@ export default function AdminDashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/claims"] });
+    },
+  });
+
+  const backupMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/backup", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Backup failed");
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Backup Complete",
+        description: `Successfully backed up ${data.tablesBackedUp} tables and ${data.filesBackedUp} files to S3`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Backup Failed",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -565,6 +596,19 @@ export default function AdminDashboard() {
               >
                 <Download className="h-4 w-4 mr-2" />
                 Export CSV
+              </Button>
+              <Button
+                onClick={() => backupMutation.mutate()}
+                variant="outline"
+                disabled={backupMutation.isPending}
+                data-testid="button-backup-s3"
+              >
+                {backupMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <CloudUpload className="h-4 w-4 mr-2" />
+                )}
+                {backupMutation.isPending ? "Backing up..." : "Backup to S3"}
               </Button>
               <Button
                 onClick={handleLogout}
