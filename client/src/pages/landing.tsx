@@ -274,17 +274,6 @@ export default function LandingPage() {
             </CardContent>
           </Card>
           
-          {/* Disclaimer */}
-          <div className="mt-8 pt-6 border-t border-border/50">
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              <span className="text-primary font-medium">*</span> The buildings are insured under Moreland's bespoke policy wording, 
-              produced in conjunction with the insurer, underwriters, and our specialist broker team. Coverage is subject to the 
-              full terms, conditions, limits, and exclusions contained within the insurer's official policy documents. This summary 
-              is provided for general information only and does not replace or override the insurer's wording, schedule, or endorsements. 
-              Nothing on this page constitutes insurance advice. For full details of your building's insurance cover, please refer to 
-              the complete policy documentation or contact our insurance administration team.
-            </p>
-          </div>
         </div>
       </section>
       
@@ -334,9 +323,19 @@ export default function LandingPage() {
       
       {/* Footer */}
       <footer className="py-8 px-6 bg-card border-t">
-        <div className="max-w-6xl mx-auto text-center text-sm text-muted-foreground">
-          <p>&copy; {new Date().getFullYear()} Moreland Estate Management. All rights reserved.</p>
-          <p className="mt-2">Buildings insurance claims facilitation service for leaseholders</p>
+        <div className="max-w-6xl mx-auto text-center">
+          <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Moreland Estate Management. All rights reserved.</p>
+          <p className="text-sm text-muted-foreground mt-2">Buildings insurance claims facilitation service for leaseholders</p>
+          
+          <p className="text-[10px] text-muted-foreground/70 mt-6 max-w-4xl mx-auto leading-relaxed">
+            * The features described above apply only to buildings insured under Moreland's bespoke policy wording, 
+            produced in conjunction with the insurer, underwriters, and our specialist broker team. Buildings insured 
+            under different policy arrangements may have different levels of cover. Coverage is always subject to the 
+            full terms, conditions, limits, and exclusions contained within the insurer's official policy documents. 
+            This summary is for general guidance only and does not replace or override the insurer's wording, schedule, 
+            or endorsements. Nothing on this page constitutes insurance advice. For full details of your building's 
+            insurance cover, please refer to the complete policy documentation or contact our insurance administration team.
+          </p>
         </div>
       </footer>
     </div>
