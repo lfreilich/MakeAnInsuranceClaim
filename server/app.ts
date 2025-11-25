@@ -33,6 +33,9 @@ export function log(message: string, source = "express") {
 
 export const app = express();
 
+// Trust reverse proxy (required for secure cookies on Replit/production)
+app.set('trust proxy', 1);
+
 declare module 'http' {
   interface IncomingMessage {
     rawBody: unknown
