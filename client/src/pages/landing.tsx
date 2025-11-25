@@ -68,7 +68,7 @@ export default function LandingPage() {
           <p className="text-sm text-slate-400 mt-4">
             <span>Average completion time: 15 minutes</span>
             <span className="mx-2">|</span>
-            <Link href="/admin" className="text-blue-300 hover:text-blue-200 hover:underline">
+            <Link href="/admin" className="text-amber-400 hover:text-amber-300 hover:underline">
               Already submitted a claim? Track it here
             </Link>
           </p>
@@ -110,7 +110,7 @@ export default function LandingPage() {
           <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12 text-amber-400">How It Works</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
+            <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-8">
                 <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center text-2xl font-bold mb-4">
                   1
@@ -123,7 +123,7 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
+            <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-8">
                 <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center text-2xl font-bold mb-4">
                   2
@@ -136,7 +136,7 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
+            <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-8">
                 <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center text-2xl font-bold mb-4">
                   3
@@ -313,9 +313,9 @@ export default function LandingPage() {
           </p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
+            <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-8 flex flex-col items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-blue-500/30 flex items-center justify-center">
                   <Mail className="w-6 h-6 text-amber-400" />
                 </div>
                 <div>
@@ -331,9 +331,9 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
+            <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-8 flex flex-col items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full bg-blue-500/30 flex items-center justify-center">
                   <Phone className="w-6 h-6 text-amber-400" />
                 </div>
                 <div>
