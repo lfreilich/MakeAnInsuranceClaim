@@ -621,6 +621,12 @@ export class DatabaseStorage implements IStorage {
   }> {
     const emailLower = email.toLowerCase();
 
+    // Check if user has staff/superuser role in database
+    const dbUser = await this.getUserByEmail(emailLower);
+    if (dbUser && (dbUser.role === 'staff' || dbUser.role === 'superuser' || dbUser.role === 'admin')) {
+      return { role: 'staff' };
+    }
+
     // Check if staff domain (@mnninsure.com or @morelandestate.co.uk)
     if (emailLower.endsWith('@mnninsure.com') || emailLower.endsWith('@morelandestate.co.uk')) {
       return { role: 'staff' };
