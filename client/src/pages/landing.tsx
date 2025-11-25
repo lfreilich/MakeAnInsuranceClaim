@@ -173,12 +173,12 @@ export default function LandingPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <span className="text-3xl font-bold text-amber-500 flex-shrink-0">01</span>
+              <CardContent className="p-6 h-full">
+                <div className="flex items-center gap-5 h-full">
+                  <span className="text-4xl font-bold text-amber-500 flex-shrink-0 w-12">01</span>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">30% Alternative Accommodation</h3>
-                    <p className="text-sm text-white/90">
+                    <p className="text-sm text-white/80 leading-relaxed">
                       If your flat becomes uninhabitable, the policy provides significantly higher-than-standard 
                       limits to ensure you're re-housed comfortably while repairs are completed.
                     </p>
@@ -188,12 +188,12 @@ export default function LandingPage() {
             </Card>
             
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <span className="text-3xl font-bold text-amber-500 flex-shrink-0">02</span>
+              <CardContent className="p-6 h-full">
+                <div className="flex items-center gap-5 h-full">
+                  <span className="text-4xl font-bold text-amber-500 flex-shrink-0 w-12">02</span>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">Knotweed & Fly-Tipping Cover</h3>
-                    <p className="text-sm text-white/90">
+                    <p className="text-sm text-white/80 leading-relaxed">
                       Unusual and highly valuable protections that most block policies exclude, keeping the 
                       estate protected from unexpected environmental issues.
                     </p>
@@ -203,12 +203,12 @@ export default function LandingPage() {
             </Card>
             
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <span className="text-3xl font-bold text-amber-500 flex-shrink-0">03</span>
+              <CardContent className="p-6 h-full">
+                <div className="flex items-center gap-5 h-full">
+                  <span className="text-4xl font-bold text-amber-500 flex-shrink-0 w-12">03</span>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">Police Welfare Entry & Squatter Damage</h3>
-                    <p className="text-sm text-white/90">
+                    <p className="text-sm text-white/80 leading-relaxed">
                       Damage caused during emergency welfare checks or unlawful occupation is included, giving 
                       residents peace of mind.
                     </p>
@@ -218,12 +218,12 @@ export default function LandingPage() {
             </Card>
             
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <span className="text-3xl font-bold text-amber-500 flex-shrink-0">04</span>
+              <CardContent className="p-6 h-full">
+                <div className="flex items-center gap-5 h-full">
+                  <span className="text-4xl font-bold text-amber-500 flex-shrink-0 w-12">04</span>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">Enhanced Leak Detection</h3>
-                    <p className="text-sm text-white/90">
+                    <p className="text-sm text-white/80 leading-relaxed">
                       The policy pays for finding and fixing the source of leaks within walls and ceilings, 
                       protecting you from the most common type of flat-to-flat damage.
                     </p>
@@ -233,12 +233,12 @@ export default function LandingPage() {
             </Card>
             
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <span className="text-3xl font-bold text-amber-500 flex-shrink-0">05</span>
+              <CardContent className="p-6 h-full">
+                <div className="flex items-center gap-5 h-full">
+                  <span className="text-4xl font-bold text-amber-500 flex-shrink-0 w-12">05</span>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">Day-One Rebuild Protection</h3>
-                    <p className="text-sm text-white/90">
+                    <p className="text-sm text-white/80 leading-relaxed">
                       Your building is protected against inflation in construction costs from day one, 
                       ensuring full reinstatement after a major event.
                     </p>
@@ -248,12 +248,12 @@ export default function LandingPage() {
             </Card>
             
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <span className="text-3xl font-bold text-amber-500 flex-shrink-0">06</span>
+              <CardContent className="p-6 h-full">
+                <div className="flex items-center gap-5 h-full">
+                  <span className="text-4xl font-bold text-amber-500 flex-shrink-0 w-12">06</span>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">Composite Insured Protection</h3>
-                    <p className="text-sm text-white/90">
+                    <p className="text-sm text-white/80 leading-relaxed">
                       One resident's mistake won't invalidate the entire block's insurance. Your cover 
                       remains safe regardless of others' actions.
                     </p>
