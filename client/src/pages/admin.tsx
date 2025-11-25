@@ -91,8 +91,6 @@ export default function AdminDashboard() {
           if (data.user) {
             setIsAuthenticated(true);
             setUser(data.user);
-            // Clear all cached query data to force fresh fetches
-            queryClient.clear();
           }
         }
       } catch (error) {
@@ -103,6 +101,15 @@ export default function AdminDashboard() {
     }
     checkExistingSession();
   }, []);
+
+  // Invalidate queries after authentication state changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      queryClient.invalidateQueries({ queryKey: ["/api/claims"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/policies"] });
+    }
+  }, [isAuthenticated]);
 
   const { data: claims = [], isLoading } = useQuery<Claim[]>({
     queryKey: ["/api/claims"],
