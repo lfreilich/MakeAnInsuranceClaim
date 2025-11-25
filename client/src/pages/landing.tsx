@@ -102,10 +102,10 @@ export default function LandingPage() {
                 <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold mb-4">
                   1
                 </div>
-                <h3 className="text-xl font-semibold mb-3">Verify Your Property</h3>
+                <h3 className="text-xl font-semibold mb-3">Enter Your Details</h3>
                 <p className="text-muted-foreground">
-                  Select your block and confirm your property address. Our system automatically validates 
-                  that your property is covered under Moreland's buildings insurance.
+                  Provide your contact information and property address. Our guided form makes it easy 
+                  to submit the details needed to process your buildings insurance claim.
                 </p>
               </CardContent>
             </Card>
