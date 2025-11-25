@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -76,6 +76,30 @@ export default function AdminDashboard() {
   const [requiresPhoneRegistration, setRequiresPhoneRegistration] = useState(false);
   const [showPhoneEditDialog, setShowPhoneEditDialog] = useState(false);
   const [editingPhone, setEditingPhone] = useState("");
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // Check for existing session on page load
+  useEffect(() => {
+    async function checkExistingSession() {
+      try {
+        const response = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.user) {
+            setIsAuthenticated(true);
+            setUser(data.user);
+          }
+        }
+      } catch (error) {
+        console.error("Session check failed:", error);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    }
+    checkExistingSession();
+  }, []);
 
   const { data: claims = [], isLoading } = useQuery<Claim[]>({
     queryKey: ["/api/claims"],
@@ -395,6 +419,18 @@ export default function AdminDashboard() {
         return "secondary";
     }
   };
+
+  // Show loading while checking existing session
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Checking session...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (
