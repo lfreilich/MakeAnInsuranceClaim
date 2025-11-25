@@ -48,16 +48,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (isStaff) {
         const user = existingUser || await storage.getOrCreateUser(normalizedEmail);
         const hasPhone = !!user.phone;
+        const hasLoggedIn = user.hasLoggedIn ?? false;
         
+        // SMS only available after first email login AND user has a phone registered
         res.status(200).json({
           hasPhone,
+          hasLoggedIn,
           requiresPhoneRegistration: !hasPhone,
+          canUseSms: hasLoggedIn && hasPhone, // SMS only after first email login
         });
       } else {
-        // Non-staff users don't need phone registration
+        // Non-staff users don't need phone registration, always use email
         res.status(200).json({
           hasPhone: false,
+          hasLoggedIn: false,
           requiresPhoneRegistration: false,
+          canUseSms: false,
         });
       }
     } catch (error: any) {
@@ -208,8 +214,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Get phone from database
+      // Get phone from database and mark user as having logged in
       const dbUser = await storage.getUserByEmail(email);
+      
+      // Mark user as having logged in (for SMS eligibility on future logins)
+      if (dbUser && !dbUser.hasLoggedIn) {
+        await storage.markUserAsLoggedIn(email);
+        console.log(`[AUTH] First login for ${email} - marked as logged in`);
+      }
       
       res.status(200).json({
         message: "Authentication successful",

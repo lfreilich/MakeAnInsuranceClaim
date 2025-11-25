@@ -239,6 +239,15 @@ export class DatabaseStorage implements IStorage {
     return updatedUser || undefined;
   }
 
+  async markUserAsLoggedIn(email: string): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ hasLoggedIn: true })
+      .where(eq(users.email, email))
+      .returning();
+    return updatedUser || undefined;
+  }
+
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).where(eq(users.active, true));
   }

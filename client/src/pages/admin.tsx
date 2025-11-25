@@ -74,6 +74,7 @@ export default function AdminDashboard() {
   const [deliveryMethod, setDeliveryMethod] = useState<"email" | "sms">("email");
   const [userHasPhone, setUserHasPhone] = useState(false);
   const [requiresPhoneRegistration, setRequiresPhoneRegistration] = useState(false);
+  const [canUseSms, setCanUseSms] = useState(false);
   const [showPhoneEditDialog, setShowPhoneEditDialog] = useState(false);
   const [editingPhone, setEditingPhone] = useState("");
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
@@ -228,13 +229,19 @@ export default function AdminDashboard() {
       }
       return response.json();
     },
-    onSuccess: (data: { hasPhone: boolean; requiresPhoneRegistration: boolean }) => {
+    onSuccess: (data: { hasPhone: boolean; requiresPhoneRegistration: boolean; canUseSms: boolean; hasLoggedIn: boolean }) => {
       setUserHasPhone(data.hasPhone);
       setRequiresPhoneRegistration(data.requiresPhoneRegistration);
+      setCanUseSms(data.canUseSms);
       
       if (data.requiresPhoneRegistration) {
+        // Staff without phone must register phone first
         setAuthStep("phone-register");
+      } else if (!data.hasLoggedIn) {
+        // First-time login: skip delivery choice, go straight to email code
+        requestCodeMutation.mutate({ email, deliveryMethod: "email" });
       } else {
+        // Returning user: show delivery method choice (if SMS available)
         setAuthStep("delivery");
       }
       setAuthError("");
@@ -531,28 +538,29 @@ export default function AdminDashboard() {
                     <Button
                       type="button"
                       variant={deliveryMethod === "email" ? "default" : "outline"}
-                      className="flex-1"
+                      className={canUseSms ? "flex-1" : "w-full"}
                       onClick={() => setDeliveryMethod("email")}
                       data-testid="button-delivery-email"
                     >
                       <Mail className="h-4 w-4 mr-2" />
                       Email
                     </Button>
-                    <Button
-                      type="button"
-                      variant={deliveryMethod === "sms" ? "default" : "outline"}
-                      className="flex-1"
-                      onClick={() => setDeliveryMethod("sms")}
-                      disabled={!userHasPhone}
-                      data-testid="button-delivery-sms"
-                    >
-                      <Phone className="h-4 w-4 mr-2" />
-                      SMS
-                    </Button>
+                    {canUseSms && (
+                      <Button
+                        type="button"
+                        variant={deliveryMethod === "sms" ? "default" : "outline"}
+                        className="flex-1"
+                        onClick={() => setDeliveryMethod("sms")}
+                        data-testid="button-delivery-sms"
+                      >
+                        <Phone className="h-4 w-4 mr-2" />
+                        SMS
+                      </Button>
+                    )}
                   </div>
-                  {!userHasPhone && (
+                  {!canUseSms && userHasPhone && (
                     <p className="text-xs text-muted-foreground">
-                      SMS delivery requires a registered phone number
+                      SMS delivery will be available after your first email login
                     </p>
                   )}
                   {authError && (

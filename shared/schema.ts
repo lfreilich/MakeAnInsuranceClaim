@@ -13,6 +13,7 @@ export const users = pgTable("users", {
   phone: varchar("phone", { length: 20 }),
   role: varchar("role", { length: 50 }).notNull().default("admin"),
   active: boolean("active").notNull().default(true),
+  hasLoggedIn: boolean("has_logged_in").notNull().default(false), // Track if user has ever logged in via email
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
