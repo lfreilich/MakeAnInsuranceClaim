@@ -34,12 +34,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const normalizedEmail = email.toLowerCase().trim();
       
       // Check if staff domain
-      const isStaff = normalizedEmail.endsWith('@mnninsure.com') || 
+      const isStaffDomain = normalizedEmail.endsWith('@mnninsure.com') || 
                       normalizedEmail.endsWith('@morelandestate.co.uk');
+      
+      // Also check if user has staff/superuser role in database
+      const existingUser = await storage.getUserByEmail(normalizedEmail);
+      const isDbStaff = existingUser && (existingUser.role === 'staff' || existingUser.role === 'superuser' || existingUser.role === 'admin');
+      
+      const isStaff = isStaffDomain || isDbStaff;
       
       // Get or create user for staff
       if (isStaff) {
-        const user = await storage.getOrCreateUser(normalizedEmail);
+        const user = existingUser || await storage.getOrCreateUser(normalizedEmail);
         const hasPhone = !!user.phone;
         
         res.status(200).json({
