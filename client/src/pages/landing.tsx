@@ -9,7 +9,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative min-h-[500px] sm:min-h-[600px] lg:min-h-[700px] w-full overflow-hidden py-12 sm:py-16 lg:py-20">
+      <section className="relative min-h-screen w-full overflow-hidden flex flex-col">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroImage})` }}
@@ -17,7 +17,7 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-slate-900/70 to-slate-900/90" />
         </div>
         
-        <div className="relative z-10 h-full flex flex-col items-center justify-center px-6 text-center">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 py-12 text-center">
           <img
             src={logoImage}
             alt="Moreland Estate Management"
