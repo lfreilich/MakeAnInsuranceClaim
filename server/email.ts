@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import type { Claim } from "@shared/schema";
 
 const CLAIMS_EMAIL = "claims@morelandestate.co.uk";
+const MAIL_EMAIL = "mail@morelandestate.co.uk";
 
 let connectionSettings: any;
 
@@ -120,27 +121,29 @@ export async function sendClaimConfirmationEmail(claim: Claim): Promise<void> {
       html: htmlContent,
     });
 
-    // Send internal notification
+    // Send internal notification to both claims and mail addresses
+    const internalNotificationHtml = `
+      <h2>New Insurance Claim Received</h2>
+      <p><strong>Reference:</strong> ${claim.referenceNumber}</p>
+      <p><strong>Claimant:</strong> ${claim.claimantName}</p>
+      <p><strong>Email:</strong> ${claim.claimantEmail}</p>
+      <p><strong>Phone:</strong> ${claim.claimantPhone}</p>
+      <p><strong>Property:</strong> ${claim.propertyAddress}</p>
+      <p><strong>Block:</strong> ${claim.propertyBlock}</p>
+      <p><strong>Incident Date:</strong> ${new Date(claim.incidentDate).toLocaleDateString()}</p>
+      <p><strong>Type:</strong> ${claim.incidentType}</p>
+      <p><strong>Description:</strong></p>
+      <p>${claim.incidentDescription}</p>
+      <p><strong>Submitted:</strong> ${new Date(claim.submittedAt!).toLocaleString()}</p>
+      <hr>
+      <p>Please review and forward to the insurance company's claims team.</p>
+    `;
+
     await resend.emails.send({
       from: fromEmail,
-      to: CLAIMS_EMAIL,
+      to: [CLAIMS_EMAIL, MAIL_EMAIL],
       subject: `New Claim Submitted - ${claim.referenceNumber}`,
-      html: `
-        <h2>New Insurance Claim Received</h2>
-        <p><strong>Reference:</strong> ${claim.referenceNumber}</p>
-        <p><strong>Claimant:</strong> ${claim.claimantName}</p>
-        <p><strong>Email:</strong> ${claim.claimantEmail}</p>
-        <p><strong>Phone:</strong> ${claim.claimantPhone}</p>
-        <p><strong>Property:</strong> ${claim.propertyAddress}</p>
-        <p><strong>Block:</strong> ${claim.propertyBlock}</p>
-        <p><strong>Incident Date:</strong> ${new Date(claim.incidentDate).toLocaleDateString()}</p>
-        <p><strong>Type:</strong> ${claim.incidentType}</p>
-        <p><strong>Description:</strong></p>
-        <p>${claim.incidentDescription}</p>
-        <p><strong>Submitted:</strong> ${new Date(claim.submittedAt!).toLocaleString()}</p>
-        <hr>
-        <p>Please review and forward to the insurance company's claims team.</p>
-      `,
+      html: internalNotificationHtml,
     });
 
     console.log(`Claim confirmation email sent for ${claim.referenceNumber}`);

@@ -141,6 +141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get user access level
       const accessLevel = await storage.getUserAccessLevel(email);
+      console.log(`[AUTH] User ${email} authenticated with role: ${accessLevel.role}, claimAccess: ${JSON.stringify(accessLevel.claimAccess || [])}`);
       
       // Store in session
       if (req.session) {
