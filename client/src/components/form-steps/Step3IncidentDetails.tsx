@@ -15,9 +15,19 @@ import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { AIWritingAssistant } from "../AIWritingAssistant";
 
+interface LateNotificationAuditEntry {
+  action: 'acknowledged' | 'date_changed' | 'back_clicked';
+  timestamp: string;
+  details?: {
+    previousDate?: string;
+    newDate?: string;
+    daysSinceIncident?: number;
+  };
+}
+
 interface Step3IncidentDetailsProps {
   defaultValues: Partial<Step3Data>;
-  onNext: (data: Step3Data) => void;
+  onNext: (data: Step3Data, lateNotificationData?: { acknowledged: boolean; auditLog: LateNotificationAuditEntry[] }) => void;
   onBack: () => void;
 }
 
@@ -25,6 +35,8 @@ export function Step3IncidentDetails({ defaultValues, onNext, onBack }: Step3Inc
   const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [showLateNotificationWarning, setShowLateNotificationWarning] = useState(false);
   const [lateNotificationAcknowledged, setLateNotificationAcknowledged] = useState(false);
+  const [lateNotificationAuditLog, setLateNotificationAuditLog] = useState<LateNotificationAuditEntry[]>([]);
+  const [acknowledgedDate, setAcknowledgedDate] = useState<Date | null>(null);
   
   const form = useForm<Step3Data>({
     resolver: zodResolver(step3Schema),
@@ -49,9 +61,58 @@ export function Step3IncidentDetails({ defaultValues, onNext, onBack }: Step3Inc
     }
   }, [incidentDate, isWithin60Days, lateNotificationAcknowledged]);
 
+  useEffect(() => {
+    if (lateNotificationAcknowledged && acknowledgedDate && incidentDate) {
+      const acknowledgedTime = acknowledgedDate.getTime();
+      const currentTime = incidentDate.getTime();
+      if (acknowledgedTime !== currentTime) {
+        const auditEntry: LateNotificationAuditEntry = {
+          action: 'date_changed',
+          timestamp: new Date().toISOString(),
+          details: {
+            previousDate: acknowledgedDate.toISOString(),
+            newDate: incidentDate.toISOString(),
+            daysSinceIncident,
+          },
+        };
+        setLateNotificationAuditLog(prev => [...prev, auditEntry]);
+        setAcknowledgedDate(incidentDate);
+        
+        if (!isWithin60Days) {
+          setShowLateNotificationWarning(true);
+          setLateNotificationAcknowledged(false);
+        }
+      }
+    }
+  }, [incidentDate, lateNotificationAcknowledged, acknowledgedDate, daysSinceIncident, isWithin60Days]);
+
   const handleAcknowledgeLateNotification = () => {
+    const auditEntry: LateNotificationAuditEntry = {
+      action: 'acknowledged',
+      timestamp: new Date().toISOString(),
+      details: {
+        newDate: incidentDate.toISOString(),
+        daysSinceIncident,
+      },
+    };
+    setLateNotificationAuditLog(prev => [...prev, auditEntry]);
     setLateNotificationAcknowledged(true);
+    setAcknowledgedDate(incidentDate);
     setShowLateNotificationWarning(false);
+  };
+
+  const handleBackClick = () => {
+    if (lateNotificationAcknowledged) {
+      const auditEntry: LateNotificationAuditEntry = {
+        action: 'back_clicked',
+        timestamp: new Date().toISOString(),
+        details: {
+          daysSinceIncident,
+        },
+      };
+      setLateNotificationAuditLog(prev => [...prev, auditEntry]);
+    }
+    onBack();
   };
 
   const handleAIEnhance = (enhancedText: string) => {
@@ -59,7 +120,14 @@ export function Step3IncidentDetails({ defaultValues, onNext, onBack }: Step3Inc
   };
 
   const onSubmit = (data: Step3Data) => {
-    onNext(data);
+    if (lateNotificationAcknowledged || lateNotificationAuditLog.length > 0) {
+      onNext(data, {
+        acknowledged: lateNotificationAcknowledged,
+        auditLog: lateNotificationAuditLog,
+      });
+    } else {
+      onNext(data);
+    }
   };
 
   return (
@@ -200,7 +268,7 @@ export function Step3IncidentDetails({ defaultValues, onNext, onBack }: Step3Inc
           />
 
           <div className="flex justify-between pt-4">
-            <Button type="button" variant="outline" onClick={onBack} data-testid="button-back-step3">
+            <Button type="button" variant="outline" onClick={handleBackClick} data-testid="button-back-step3">
               <ChevronLeft className="w-4 h-4 mr-2" />
               Back
             </Button>

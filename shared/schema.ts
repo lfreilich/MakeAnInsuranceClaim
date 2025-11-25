@@ -82,6 +82,10 @@ export const claims = pgTable("claims", {
   incidentType: varchar("incident_type", { length: 100 }).notNull(),
   incidentDescription: text("incident_description").notNull(),
   
+  // Late Notification Tracking
+  lateNotificationAcknowledged: boolean("late_notification_acknowledged").default(false),
+  lateNotificationAuditLog: jsonb("late_notification_audit_log"),
+  
   // Building Damage
   hasBuildingDamage: boolean("has_building_damage").notNull().default(false),
   buildingDamageDescription: text("building_damage_description"),

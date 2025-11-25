@@ -21,9 +21,23 @@ import { useToast } from "@/hooks/use-toast";
 
 const TOTAL_STEPS = 8;
 
+interface LateNotificationData {
+  acknowledged: boolean;
+  auditLog: Array<{
+    action: 'acknowledged' | 'date_changed' | 'back_clicked';
+    timestamp: string;
+    details?: {
+      previousDate?: string;
+      newDate?: string;
+      daysSinceIncident?: number;
+    };
+  }>;
+}
+
 export default function ClaimForm() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<Partial<ClaimFormData>>({});
+  const [lateNotificationData, setLateNotificationData] = useState<LateNotificationData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -34,6 +48,15 @@ export default function ClaimForm() {
 
   const handleStepComplete = (stepData: Partial<ClaimFormData>) => {
     updateFormData(stepData);
+    setCurrentStep(prev => Math.min(prev + 1, TOTAL_STEPS));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleStep3Complete = (stepData: Partial<ClaimFormData>, lateNotification?: LateNotificationData) => {
+    updateFormData(stepData);
+    if (lateNotification) {
+      setLateNotificationData(lateNotification);
+    }
     setCurrentStep(prev => Math.min(prev + 1, TOTAL_STEPS));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -63,6 +86,9 @@ export default function ClaimForm() {
       policeReports: formData.policeReports ?? [],
       otherDocuments: formData.otherDocuments ?? [],
       tenancyAgreements: formData.tenancyAgreements ?? [],
+      // Late notification tracking
+      lateNotificationAcknowledged: lateNotificationData?.acknowledged ?? false,
+      lateNotificationAuditLog: lateNotificationData?.auditLog ?? null,
     };
     setIsSubmitting(true);
 
@@ -163,7 +189,7 @@ export default function ClaimForm() {
             {currentStep === 3 && (
               <Step3IncidentDetails
                 defaultValues={formData}
-                onNext={handleStepComplete}
+                onNext={handleStep3Complete}
                 onBack={handleBack}
               />
             )}
