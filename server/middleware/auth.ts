@@ -9,7 +9,11 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 export function requireStaff(req: Request, res: Response, next: NextFunction) {
-  if (!req.session.user || req.session.user.role !== 'staff') {
+  const role = req.session.user?.role;
+  const isStaff = role === 'staff' || role === 'superuser' || role === 'admin';
+  
+  if (!req.session.user || !isStaff) {
+    console.log(`[AUTH] Staff access denied - session role: ${role}`);
     return res.status(403).json({ message: "Staff access required" });
   }
   next();
@@ -25,7 +29,8 @@ export async function requireClaimAccess(req: Request, res: Response, next: Next
     return res.status(400).json({ message: "Invalid claim ID" });
   }
 
-  if (req.session.user.role === 'staff') {
+  const role = req.session.user.role;
+  if (role === 'staff' || role === 'superuser' || role === 'admin') {
     return next();
   }
 
@@ -46,8 +51,11 @@ export async function requireClaimWrite(req: Request, res: Response, next: NextF
     return res.status(400).json({ message: "Invalid claim ID" });
   }
 
-  if (req.session.user.role === 'staff' || req.session.user.role === 'tenant') {
-    if (req.session.user.role === 'tenant' && !req.session.user.claimAccess.includes(claimId)) {
+  const role = req.session.user.role;
+  const isStaff = role === 'staff' || role === 'superuser' || role === 'admin';
+  
+  if (isStaff || role === 'tenant') {
+    if (role === 'tenant' && !req.session.user.claimAccess.includes(claimId)) {
       return res.status(403).json({ message: "Access denied to this claim" });
     }
     return next();

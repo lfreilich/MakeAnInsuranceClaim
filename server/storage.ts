@@ -87,7 +87,7 @@ export interface IStorage {
   verifyCode(email: string, code: string): Promise<boolean>;
   cleanupExpiredCodes(): Promise<void>;
   getUserAccessLevel(email: string, claimId?: number): Promise<{
-    role: 'staff' | 'tenant' | 'assessor' | 'none';
+    role: 'staff' | 'superuser' | 'admin' | 'tenant' | 'assessor' | 'none';
     claimAccess?: number[];
   }>;
   
@@ -616,15 +616,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserAccessLevel(email: string, claimId?: number): Promise<{
-    role: 'staff' | 'tenant' | 'assessor' | 'none';
+    role: 'staff' | 'superuser' | 'admin' | 'tenant' | 'assessor' | 'none';
     claimAccess?: number[];
   }> {
     const emailLower = email.toLowerCase();
 
-    // Check if user has staff/superuser role in database
+    // Check if user has staff/superuser role in database (case-insensitive)
     const dbUser = await this.getUserByEmail(emailLower);
+    console.log(`[AUTH] getUserAccessLevel for ${emailLower}: dbUser=${JSON.stringify(dbUser)}`);
+    
     if (dbUser && (dbUser.role === 'staff' || dbUser.role === 'superuser' || dbUser.role === 'admin')) {
-      return { role: 'staff' };
+      // Return the actual role from database so middleware can check it
+      return { role: dbUser.role as 'staff' | 'superuser' | 'admin' };
     }
 
     // Check if staff domain (@mnninsure.com or @morelandestate.co.uk)

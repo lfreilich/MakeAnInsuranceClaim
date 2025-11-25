@@ -5,7 +5,7 @@ declare module 'express-session' {
   interface SessionData {
     user?: {
       email: string;
-      role: 'staff' | 'tenant' | 'assessor' | 'none';
+      role: 'staff' | 'superuser' | 'admin' | 'tenant' | 'assessor' | 'none';
       claimAccess: number[];
     };
   }
