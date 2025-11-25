@@ -346,56 +346,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Public session diagnostic (temporary - for debugging)
-  app.get("/api/debug/session-check", async (req: Request, res: Response) => {
-    res.json({
-      hasSession: !!req.session,
-      hasUser: !!req.session?.user,
-      sessionUser: req.session?.user ? {
-        email: req.session.user.email,
-        role: req.session.user.role,
-        roleLower: req.session.user.role?.toLowerCase(),
-        claimAccessCount: req.session.user.claimAccess?.length || 0,
-      } : null,
-      sessionId: req.sessionID,
-      cookieHeader: req.headers.cookie ? "present" : "missing",
-    });
-  });
-
-  // Database diagnostic endpoint (temporary - for debugging production issues)
-  app.get("/api/debug/db-check", requireStaff, async (req: Request, res: Response) => {
-    try {
-      const { Pool } = await import("@neondatabase/serverless");
-      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-      
-      // Get claims count
-      const countResult = await pool.query("SELECT COUNT(*) as count FROM claims");
-      const claimsCount = countResult.rows[0].count;
-      
-      // Get column names
-      const columnsResult = await pool.query(
-        "SELECT column_name FROM information_schema.columns WHERE table_name = 'claims' ORDER BY ordinal_position"
-      );
-      const columns = columnsResult.rows.map((r: any) => r.column_name);
-      
-      // Get first claim ID if any exist
-      const sampleResult = await pool.query("SELECT id, reference_number, status FROM claims LIMIT 3");
-      
-      await pool.end();
-      
-      res.json({
-        claimsCount,
-        columnCount: columns.length,
-        columns,
-        sampleClaims: sampleResult.rows,
-        databaseUrl: process.env.DATABASE_URL ? "configured" : "missing"
-      });
-    } catch (error: any) {
-      console.error("DB check error:", error);
-      res.status(500).json({ error: error.message, stack: error.stack });
-    }
-  });
-
   // Get all claims (admin endpoint)
   app.get("/api/claims", requireStaff, async (req: Request, res: Response) => {
     try {

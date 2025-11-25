@@ -217,6 +217,7 @@ Preferred communication style: Simple, everyday language.
 - Reference number lookups enforce claim access checks
 - All sensitive GET endpoints protected with appropriate middleware
 - Session cookies with httpOnly flag
+- Trust proxy enabled (`app.set('trust proxy', 1)`) for secure cookies behind Replit's reverse proxy
 
 ### Configuration Management
 
