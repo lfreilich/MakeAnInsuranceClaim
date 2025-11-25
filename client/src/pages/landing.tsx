@@ -35,14 +35,14 @@ export default function LandingPage() {
           </p>
           
           {/* Facilitator Notice */}
-          <Card className="mb-8 max-w-3xl bg-blue-500/20 border-blue-500/30 backdrop-blur-sm">
+          <Card className="mb-8 max-w-3xl bg-blue-500/20 border-blue-500/30 backdrop-blur-sm text-white">
             <CardContent className="p-6 flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
               <div className="text-left">
                 <p className="text-sm text-amber-400 font-medium mb-1">
                   Please Note:
                 </p>
-                <p className="text-sm text-slate-300">
+                <p className="text-sm text-white/90">
                   Moreland Estate Management does not make decisions on claims. We act as a facilitator 
                   to ensure your claim reaches the insurers efficiently. All claim decisions are made by 
                   the insurance company's claims team.
@@ -58,7 +58,7 @@ export default function LandingPage() {
               </Button>
             </Link>
             <Link href="/admin">
-              <Button size="lg" variant="outline" className="text-lg px-8 py-6 bg-white/10 border-white/30 text-white hover:bg-white/20" data-testid="button-login">
+              <Button size="lg" variant="outline" className="text-lg px-8 py-6 bg-blue-500/30 border-blue-400/50 text-amber-400 hover:bg-blue-500/40" data-testid="button-login">
                 <LogIn className="w-5 h-5 mr-2" />
                 Login
               </Button>
@@ -116,7 +116,7 @@ export default function LandingPage() {
                   1
                 </div>
                 <h3 className="text-xl font-semibold mb-3 text-amber-400">Enter Your Details</h3>
-                <p className="text-slate-300">
+                <p className="text-white/90">
                   Provide your contact information and property address. Our guided form makes it easy 
                   to submit the details needed to process your buildings insurance claim.
                 </p>
@@ -129,7 +129,7 @@ export default function LandingPage() {
                   2
                 </div>
                 <h3 className="text-xl font-semibold mb-3 text-amber-400">Document the Incident</h3>
-                <p className="text-slate-300">
+                <p className="text-white/90">
                   Provide details about the incident, upload photos of the damage, and submit repair quotes. 
                   Our guided form ensures you provide everything needed for a smooth claims process.
                 </p>
@@ -142,7 +142,7 @@ export default function LandingPage() {
                   3
                 </div>
                 <h3 className="text-xl font-semibold mb-3 text-amber-400">Submit & Track</h3>
-                <p className="text-slate-300">
+                <p className="text-white/90">
                   Review and submit your claim digitally. We'll forward it to the insurers and keep you updated 
                   throughout the assessment process.
                 </p>
@@ -164,7 +164,7 @@ export default function LandingPage() {
         <div className="relative z-10 max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-amber-400">Why Your Building's Insurance Is Exceptional<span className="text-white">*</span></h2>
-            <p className="text-lg text-slate-300 max-w-3xl mx-auto">
+            <p className="text-lg text-white/90 max-w-3xl mx-auto">
               Moreland-managed buildings benefit from a premium, portfolio-grade insurance policy that includes 
               protections rarely found in standard block of flats cover. This means faster reinstatement, 
               stronger financial safety, and wider protection for every leaseholder.
@@ -180,7 +180,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">30% Alternative Accommodation Cover</h3>
-                    <p className="text-sm text-slate-300">
+                    <p className="text-sm text-white/90">
                       If your flat becomes uninhabitable, the policy provides significantly higher-than-standard 
                       limits to ensure you're re-housed comfortably while repairs are completed.
                     </p>
@@ -197,7 +197,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">Japanese Knotweed & Fly-Tipping Cover</h3>
-                    <p className="text-sm text-slate-300">
+                    <p className="text-sm text-white/90">
                       Unusual and highly valuable protections that most block policies exclude, keeping the 
                       estate protected from unexpected environmental issues.
                     </p>
@@ -214,7 +214,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">Police Welfare Entry & Squatter Damage</h3>
-                    <p className="text-sm text-slate-300">
+                    <p className="text-sm text-white/90">
                       Damage caused during emergency welfare checks or unlawful occupation is included, giving 
                       residents peace of mind.
                     </p>
@@ -231,7 +231,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">Enhanced Leak Detection (Trace & Access)</h3>
-                    <p className="text-sm text-slate-300">
+                    <p className="text-sm text-white/90">
                       The policy pays for finding and fixing the source of leaks within walls and ceilings, 
                       protecting you from the most common type of flat-to-flat damage.
                     </p>
@@ -248,7 +248,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">Day-One Rebuild Protection</h3>
-                    <p className="text-sm text-slate-300">
+                    <p className="text-sm text-white/90">
                       Your building is protected against inflation in construction costs from day one, 
                       ensuring full reinstatement after a major event.
                     </p>
@@ -265,7 +265,7 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold mb-2 text-amber-400">Composite Insured Protection</h3>
-                    <p className="text-sm text-slate-300">
+                    <p className="text-sm text-white/90">
                       One resident's mistake won't invalidate the entire block's insurance. Your cover 
                       remains safe regardless of others' actions.
                     </p>
@@ -284,7 +284,7 @@ export default function LandingPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold mb-2 text-amber-400">Portfolio-Grade Protection</h3>
-                  <p className="text-slate-300 max-w-2xl">
+                  <p className="text-white/90 max-w-2xl">
                     Together, these features provide a level of cover normally reserved for institutional property 
                     portfolios, ensuring your home is safeguarded with one of the strongest residential block policies 
                     in the market.
@@ -308,7 +308,7 @@ export default function LandingPage() {
         
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <h2 className="text-3xl font-bold mb-4 text-amber-400">Need Help?</h2>
-          <p className="text-lg text-slate-300 mb-8">
+          <p className="text-lg text-white/90 mb-8">
             Our team is here to assist you with your insurance claim
           </p>
           
