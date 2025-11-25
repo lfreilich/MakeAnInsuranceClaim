@@ -431,7 +431,7 @@ export const step7Schema = z.object({
 
 export const step8Schema = z.object({
   signatureData: z.string().min(10, "Signature is required"),
-  signatureType: z.enum(["drawn", "typed"]),
+  signatureType: z.enum(["drawn", "typed", "uploaded"]),
   declarationAccepted: z.literal(true, {
     errorMap: () => ({ message: "You must accept the declaration" }),
   }),
