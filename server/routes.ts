@@ -208,12 +208,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Get phone from database
+      const dbUser = await storage.getUserByEmail(email);
+      
       res.status(200).json({
         message: "Authentication successful",
         user: {
           email,
           role: accessLevel.role,
           claimAccess: accessLevel.claimAccess || [],
+          phone: dbUser?.phone || null,
         },
       });
     } catch (error: any) {
@@ -229,7 +233,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication: Check session / Get current user
   app.get("/api/auth/me", async (req: Request, res: Response) => {
     if (req.session?.user) {
-      res.json({ user: req.session.user });
+      // Get phone number from database
+      const dbUser = await storage.getUserByEmail(req.session.user.email);
+      res.json({ 
+        user: {
+          ...req.session.user,
+          phone: dbUser?.phone || null,
+        }
+      });
     } else {
       res.status(401).json({ error: "Not authenticated" });
     }

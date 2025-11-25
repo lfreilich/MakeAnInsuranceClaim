@@ -50,6 +50,7 @@ import {
   ArrowLeft,
   CloudUpload,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { format } from "date-fns";
 import type { Claim, User as UserType, InsurancePolicy, AuditLog, ClaimNote } from "@shared/schema";
@@ -68,11 +69,13 @@ export default function AdminDashboard() {
   const [authStep, setAuthStep] = useState<"email" | "phone-register" | "delivery" | "code">("email");
   const [authError, setAuthError] = useState("");
   const [codeSentMessage, setCodeSentMessage] = useState("");
-  const [user, setUser] = useState<{ email: string; role: string; claimAccess: number[] } | null>(null);
+  const [user, setUser] = useState<{ email: string; role: string; claimAccess: number[]; phone: string | null } | null>(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState<"email" | "sms">("email");
   const [userHasPhone, setUserHasPhone] = useState(false);
   const [requiresPhoneRegistration, setRequiresPhoneRegistration] = useState(false);
+  const [showPhoneEditDialog, setShowPhoneEditDialog] = useState(false);
+  const [editingPhone, setEditingPhone] = useState("");
 
   const { data: claims = [], isLoading } = useQuery<Claim[]>({
     queryKey: ["/api/claims"],
@@ -144,6 +147,44 @@ export default function AdminDashboard() {
     onError: (error: Error) => {
       toast({
         title: "Backup Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updatePhoneMutation = useMutation({
+    mutationFn: async ({ email, phone }: { email: string; phone: string }) => {
+      const response = await fetch("/api/auth/register-phone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, phone }),
+        credentials: "include",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update phone");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      // Normalize phone for display (UK numbers: 07xxx -> 447xxx)
+      let normalizedPhone = editingPhone.replace(/\D/g, '');
+      if (normalizedPhone.startsWith('0') && normalizedPhone.length === 11) {
+        normalizedPhone = '44' + normalizedPhone.substring(1);
+      }
+      if (user) {
+        setUser({ ...user, phone: normalizedPhone });
+      }
+      setShowPhoneEditDialog(false);
+      toast({
+        title: "Phone Updated",
+        description: "Your mobile number has been updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Update Failed",
         description: error.message,
         variant: "destructive",
       });
@@ -571,8 +612,26 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-4">
             {user && (
               <div className="text-sm text-right">
-                <p className="font-medium">{user.email}</p>
-                <p className="text-muted-foreground capitalize">{user.role}</p>
+                <p className="font-medium" data-testid="text-user-email">{user.email}</p>
+                <p className="text-muted-foreground capitalize" data-testid="text-user-role">{user.role}</p>
+                <div className="flex items-center justify-end gap-1">
+                  <Phone className="h-3 w-3 text-muted-foreground" />
+                  <span className="text-muted-foreground" data-testid="text-user-phone">
+                    {user.phone ? `+${user.phone}` : "No phone"}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5"
+                    onClick={() => {
+                      setEditingPhone(user.phone || "");
+                      setShowPhoneEditDialog(true);
+                    }}
+                    data-testid="button-edit-phone"
+                  >
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                </div>
               </div>
             )}
             <div className="flex gap-2">
@@ -840,6 +899,56 @@ export default function AdminDashboard() {
           users={users}
           onClose={() => setSelectedClaim(null)}
         />
+
+        {/* Phone Edit Dialog */}
+        <Dialog open={showPhoneEditDialog} onOpenChange={setShowPhoneEditDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Update Mobile Number</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Mobile Number</label>
+                <Input
+                  placeholder="Enter mobile number (e.g., 07123456789)"
+                  value={editingPhone}
+                  onChange={(e) => setEditingPhone(e.target.value)}
+                  data-testid="input-edit-phone"
+                />
+                <p className="text-xs text-muted-foreground">
+                  UK numbers starting with 0 will be automatically converted to international format (+44)
+                </p>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPhoneEditDialog(false)}
+                  data-testid="button-cancel-phone-edit"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (user && editingPhone) {
+                      updatePhoneMutation.mutate({ email: user.email, phone: editingPhone });
+                    }
+                  }}
+                  disabled={updatePhoneMutation.isPending || !editingPhone}
+                  data-testid="button-save-phone"
+                >
+                  {updatePhoneMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save"
+                  )}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
