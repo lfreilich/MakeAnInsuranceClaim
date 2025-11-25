@@ -47,6 +47,7 @@ import {
   Clock,
   MessageSquare,
   UserCheck,
+  ArrowLeft,
 } from "lucide-react";
 import { format } from "date-fns";
 import type { Claim, User as UserType, InsurancePolicy, AuditLog, ClaimNote } from "@shared/schema";
@@ -330,10 +331,18 @@ export default function AdminDashboard() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Admin Access
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Login
+              </CardTitle>
+              <Link href="/">
+                <Button variant="ghost" size="sm" data-testid="button-back-home">
+                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  Back
+                </Button>
+              </Link>
+            </div>
             <p className="text-sm text-muted-foreground mt-2">
               {authStep === "email" && "Enter your email to continue"}
               {authStep === "phone-register" && "Register your phone number for SMS notifications"}
