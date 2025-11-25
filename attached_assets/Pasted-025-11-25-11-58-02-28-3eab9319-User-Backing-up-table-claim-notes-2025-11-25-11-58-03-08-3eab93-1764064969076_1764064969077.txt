@@ -1,0 +1,109 @@
+025-11-25 11:58:02.28
+3eab9319
+User
+Backing up table: claim_notes
+2025-11-25 11:58:03.08
+3eab9319
+User
+- Backed up 1 records from claim_notes
+2025-11-25 11:58:03.08
+3eab9319
+User
+Backing up table: payments
+2025-11-25 11:58:04.11
+3eab9319
+User
+Backing up table: verification_codes
+2025-11-25 11:58:04.11
+3eab9319
+User
+- Backed up 1 records from payments
+2025-11-25 11:58:05.18
+3eab9319
+User
+Backing up table: claim_status_transitions
+2025-11-25 11:58:05.18
+3eab9319
+User
+- Backed up 22 records from verification_codes
+2025-11-25 11:58:07.08
+3eab9319
+User
+- Backed up 1 records from claim_status_transitions
+2025-11-25 11:58:07.08
+3eab9319
+User
+Backing up uploaded files from object storage...
+2025-11-25 11:58:10.71
+3eab9319
+User
+9:58:10 AM [express] POST /api/auth/check-user 200 in 35ms :: {"hasPhone":false,"requiresPhoneRegist…
+2025-11-25 11:58:10.75
+3eab9319
+User
+Failed to backup files: replit-user-id-43927518@replit-user-43927518-bebkbxttw.iam.gserviceaccount.com does not have storage.objects.list access to the Google Cloud Storage bucket. Permission 'storage.objects.list' denied on resource (or it may not exist).
+2025-11-25 11:58:10.88
+3eab9319
+User
+Tables backed up: 9
+2025-11-25 11:58:10.88
+3eab9319
+User
+Backup complete!
+2025-11-25 11:58:10.88
+3eab9319
+User
+Files backed up: 0
+2025-11-25 11:58:10.88
+3eab9319
+User
+Errors: 1
+2025-11-25 11:58:13.65
+3eab9319
+User
+Verification code email sent to lf@ground-rent.com
+2025-11-25 11:58:13.65
+3eab9319
+User
+9:58:13 AM [express] POST /api/auth/request-code 200 in 395ms :: {"message":"Verification code sent …
+2025-11-25 11:58:34.31
+3eab9319
+User
+[AUTH] User lf@ground-rent.com authenticated with role: none, claimAccess: []
+2025-11-25 11:58:34.49
+3eab9319
+User
+9:58:34 AM [express] POST /api/auth/verify-code 200 in 440ms :: {"message":"Authentication successfu…
+2025-11-25 11:58:34.92
+3eab9319
+User
+9:58:34 AM [express] GET /api/claims 403 in 1ms :: {"message":"Staff access required"}
+2025-11-25 11:58:34.95
+3eab9319
+User
+9:58:34 AM [express] GET /api/users 403 in 1ms :: {"message":"Staff access required"}
+2025-11-25 11:58:34.96
+3eab9319
+User
+9:58:34 AM [express] GET /api/policies 403 in 1ms :: {"message":"Staff access required"}
+2025-11-25 11:59:11.82
+3eab9319
+User
+9:59:11 AM [express] GET /api/policies 403 in 1ms :: {"message":"Staff access required"}
+2025-11-25 12:00:11.69
+3eab9319
+User
+10:00:11 AM [express] POST /api/auth/check-user 200 in 138ms :: {"hasPhone":false,"requiresPhoneRegis…
+2025-11-25 12:00:14.08
+975613aa
+System
+system: received signal terminated
+2025-11-25 12:01:25.16
+3eab9319
+User
+10:01:25 AM [express] POST /api/auth/check-user 200 in 140ms :: {"hasPhone":false,"requiresPhoneRegis…
+
+2025-11-25 12:01:48.34
+3eab9319
+User
+10:01:48 AM [express] POST /api/auth/check-user 200 in 135ms :: {"hasPhone":false,"requiresPhoneRegis…

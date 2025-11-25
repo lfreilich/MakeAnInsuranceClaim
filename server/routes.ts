@@ -193,6 +193,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           role: accessLevel.role,
           claimAccess: accessLevel.claimAccess || [],
         };
+        
+        // Explicitly save session to database
+        await new Promise<void>((resolve, reject) => {
+          req.session.save((err) => {
+            if (err) {
+              console.error('[AUTH] Session save error:', err);
+              reject(err);
+            } else {
+              console.log('[AUTH] Session saved successfully for:', email);
+              resolve();
+            }
+          });
+        });
       }
       
       res.status(200).json({
