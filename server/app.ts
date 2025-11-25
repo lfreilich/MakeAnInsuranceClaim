@@ -7,8 +7,12 @@ import express, {
   NextFunction,
 } from "express";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { Pool } from "@neondatabase/serverless";
 
 import { registerRoutes } from "./routes";
+
+const PgSession = connectPgSimple(session);
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -35,8 +39,18 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 
-// Session configuration with 30-minute timeout
+// Create PostgreSQL pool for session storage
+const sessionPool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+// Session configuration with PostgreSQL store (persistent across restarts)
 app.use(session({
+  store: new PgSession({
+    pool: sessionPool,
+    tableName: 'user_sessions',
+    createTableIfMissing: true,
+  }),
   secret: process.env.SESSION_SECRET || 'moreland-claims-secret-key-change-in-production',
   resave: false,
   saveUninitialized: false,
