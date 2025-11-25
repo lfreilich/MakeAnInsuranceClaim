@@ -101,15 +101,15 @@ export default function LandingPage() {
         </div>
         
         <div className="relative z-10 max-w-6xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12 text-white">How It Works</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold text-center mb-12 text-amber-400">How It Works</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover-elevate">
+            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
               <CardContent className="p-8">
-                <div className="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center text-2xl font-bold mb-4">
+                <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center text-2xl font-bold mb-4">
                   1
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-white">Enter Your Details</h3>
+                <h3 className="text-xl font-semibold mb-3 text-amber-400">Enter Your Details</h3>
                 <p className="text-slate-300">
                   Provide your contact information and property address. Our guided form makes it easy 
                   to submit the details needed to process your buildings insurance claim.
@@ -117,12 +117,12 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover-elevate">
+            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
               <CardContent className="p-8">
-                <div className="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center text-2xl font-bold mb-4">
+                <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center text-2xl font-bold mb-4">
                   2
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-white">Document the Incident</h3>
+                <h3 className="text-xl font-semibold mb-3 text-amber-400">Document the Incident</h3>
                 <p className="text-slate-300">
                   Provide details about the incident, upload photos of the damage, and submit repair quotes. 
                   Our guided form ensures you provide everything needed for a smooth claims process.
@@ -130,12 +130,12 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover-elevate">
+            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
               <CardContent className="p-8">
-                <div className="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center text-2xl font-bold mb-4">
+                <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center text-2xl font-bold mb-4">
                   3
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-white">Submit & Track</h3>
+                <h3 className="text-xl font-semibold mb-3 text-amber-400">Submit & Track</h3>
                 <p className="text-slate-300">
                   Review and submit your claim digitally. We'll forward it to the insurers and keep you updated 
                   throughout the assessment process.
@@ -301,22 +301,22 @@ export default function LandingPage() {
         </div>
         
         <div className="relative z-10 max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4 text-white">Need Help?</h2>
+          <h2 className="text-3xl font-bold mb-4 text-amber-400">Need Help?</h2>
           <p className="text-lg text-slate-300 mb-8">
             Our team is here to assist you with your insurance claim
           </p>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover-elevate">
+            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
               <CardContent className="p-8 flex flex-col items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <Mail className="w-6 h-6 text-blue-400" />
+                <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <Mail className="w-6 h-6 text-amber-400" />
                 </div>
                 <div>
-                  <p className="font-semibold mb-1 text-white">Email Us</p>
+                  <p className="font-semibold mb-1 text-amber-400">Email Us</p>
                   <a
                     href="mailto:claims@morelandestate.co.uk"
-                    className="text-blue-400 hover:text-blue-300 hover:underline"
+                    className="text-white hover:text-amber-300 hover:underline"
                     data-testid="link-email"
                   >
                     claims@morelandestate.co.uk
@@ -325,16 +325,16 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover-elevate">
+            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
               <CardContent className="p-8 flex flex-col items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
-                  <Phone className="w-6 h-6 text-blue-400" />
+                <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+                  <Phone className="w-6 h-6 text-amber-400" />
                 </div>
                 <div>
-                  <p className="font-semibold mb-1 text-white">24/7 Emergency</p>
+                  <p className="font-semibold mb-1 text-amber-400">24/7 Emergency</p>
                   <a
                     href="tel:+442079461234"
-                    className="text-blue-400 hover:text-blue-300 hover:underline"
+                    className="text-white hover:text-amber-300 hover:underline"
                     data-testid="link-phone"
                   >
                     020 7946 1234
