@@ -7,12 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ChevronRight, ChevronLeft, Calendar as CalendarIcon, Sparkles } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ChevronRight, ChevronLeft, Calendar as CalendarIcon, Sparkles, AlertTriangle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AIWritingAssistant } from "../AIWritingAssistant";
 
 interface Step3IncidentDetailsProps {
@@ -23,6 +23,8 @@ interface Step3IncidentDetailsProps {
 
 export function Step3IncidentDetails({ defaultValues, onNext, onBack }: Step3IncidentDetailsProps) {
   const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [showLateNotificationWarning, setShowLateNotificationWarning] = useState(false);
+  const [lateNotificationAcknowledged, setLateNotificationAcknowledged] = useState(false);
   
   const form = useForm<Step3Data>({
     resolver: zodResolver(step3Schema),
@@ -40,6 +42,17 @@ export function Step3IncidentDetails({ defaultValues, onNext, onBack }: Step3Inc
     ? Math.floor((new Date().getTime() - new Date(incidentDate).getTime()) / (1000 * 60 * 60 * 24))
     : 0;
   const isWithin60Days = daysSinceIncident <= 60;
+
+  useEffect(() => {
+    if (!isWithin60Days && incidentDate && !lateNotificationAcknowledged) {
+      setShowLateNotificationWarning(true);
+    }
+  }, [incidentDate, isWithin60Days, lateNotificationAcknowledged]);
+
+  const handleAcknowledgeLateNotification = () => {
+    setLateNotificationAcknowledged(true);
+    setShowLateNotificationWarning(false);
+  };
 
   const handleAIEnhance = (enhancedText: string) => {
     form.setValue("incidentDescription", enhancedText);
@@ -205,6 +218,43 @@ export function Step3IncidentDetails({ defaultValues, onNext, onBack }: Step3Inc
         originalText={incidentDescription}
         onAccept={handleAIEnhance}
       />
+
+      <Dialog open={showLateNotificationWarning} onOpenChange={setShowLateNotificationWarning}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl">Late Notification Warning</DialogTitle>
+                <DialogDescription className="text-sm">
+                  Incident reported {daysSinceIncident} days after occurrence
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <p className="text-sm leading-relaxed">
+              This notice applies only if this is the first notification of a loss that occurred more than 60 days ago.
+            </p>
+            <p className="text-sm leading-relaxed">
+              The policy requires all claims to be reported within 60 days. You may continue to complete the claim documentation, and it will be forwarded to insurers; however, <strong>the acceptance of this claim will remain entirely at their discretion</strong>.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={handleAcknowledgeLateNotification}
+              className="w-full"
+              data-testid="button-acknowledge-late-notification"
+            >
+              I Understand - Continue with Claim
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
