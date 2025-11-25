@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Shield, Clock, FileCheck, Building2, Mail, Phone, AlertCircle, LogIn, Home, Bug, ShieldAlert, Droplets, TrendingUp, Users, Scale, CheckCircle2 } from "lucide-react";
+import { Shield, Clock, FileCheck, Building2, Mail, Phone, AlertCircle, LogIn, Home, Bug, ShieldAlert, Droplets, TrendingUp, Users, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import heroImage from "@assets/generated_images/luxury_apartment_building_hero.png";
@@ -255,36 +255,24 @@ export default function LandingPage() {
             </Card>
           </div>
           
-          {/* High Liability - Featured Card */}
+          {/* Portfolio-Grade Protection - Featured Card */}
           <Card className="mt-8 border-primary/20 bg-primary/5">
             <CardContent className="p-8">
               <div className="flex flex-col md:flex-row items-center gap-6">
                 <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                  <Scale className="w-8 h-8 text-primary-foreground" />
+                  <CheckCircle2 className="w-8 h-8 text-primary-foreground" />
                 </div>
                 <div className="text-center md:text-left">
-                  <h3 className="text-xl font-bold mb-2">£10 Million Property Owners' Liability</h3>
+                  <h3 className="text-xl font-bold mb-2">Portfolio-Grade Protection</h3>
                   <p className="text-muted-foreground">
-                    High liability protection ensures the block is compliant with lender and legal requirements, 
-                    providing comprehensive coverage for property owners.
+                    Together, these features provide a level of cover normally reserved for institutional property 
+                    portfolios—ensuring your home is safeguarded with one of the strongest residential block policies 
+                    in the market.
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
-          {/* Closing Statement */}
-          <div className="mt-12 text-center">
-            <div className="inline-flex items-center gap-2 text-primary mb-4">
-              <CheckCircle2 className="w-5 h-5" />
-              <span className="font-semibold">Portfolio-Grade Protection</span>
-            </div>
-            <p className="text-muted-foreground max-w-3xl mx-auto">
-              Together, these features provide a level of cover normally reserved for institutional property 
-              portfolios—ensuring your home is safeguarded with one of the strongest residential block policies 
-              in the market.
-            </p>
-          </div>
         </div>
       </section>
       
