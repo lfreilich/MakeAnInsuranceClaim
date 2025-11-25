@@ -8,6 +8,7 @@ interface FileUploadZoneProps {
   description?: string;
   accept?: string;
   maxFiles?: number;
+  maxFileSize?: number; // in MB, default 10MB
   required?: boolean;
   files: string[];
   onFilesChange: (files: string[]) => void;
@@ -19,6 +20,7 @@ export function FileUploadZone({
   description,
   accept = "image/*,.pdf",
   maxFiles = 5,
+  maxFileSize = 10, // 10MB default
   required = false,
   files,
   onFilesChange,
