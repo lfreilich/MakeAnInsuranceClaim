@@ -8,10 +8,14 @@ import express, {
 } from "express";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
-import { Pool } from "@neondatabase/serverless";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import ws from "ws";
 
 import { registerRoutes } from "./routes";
 import { backupToS3 } from "./backup-to-s3";
+
+// Configure WebSocket for Neon serverless driver
+neonConfig.webSocketConstructor = ws;
 
 const PgSession = connectPgSimple(session);
 
