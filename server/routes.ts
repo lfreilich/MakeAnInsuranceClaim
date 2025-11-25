@@ -1219,6 +1219,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ========================================
+  // Backup Endpoint (S3)
+  // ========================================
+
+  // Trigger backup to S3
+  app.post("/api/admin/backup", requireStaff, async (req: Request, res: Response) => {
+    try {
+      // Dynamic import to avoid loading if not needed
+      const { backupToS3 } = await import("./backup-to-s3");
+      
+      console.log("Starting S3 backup...");
+      const result = await backupToS3();
+      
+      // Log the backup action
+      const userId = req.session?.user?.email;
+      if (userId) {
+        await storage.createAuditLog({
+          userId: null,
+          claimId: null,
+          action: 'backup_created',
+          entityType: 'system',
+          entityId: null,
+          changes: {
+            timestamp: result.timestamp,
+            tablesBackedUp: result.tablesBackedUp,
+            filesBackedUp: result.filesBackedUp,
+            s3Location: result.s3Location,
+            triggeredBy: userId,
+          },
+        });
+      }
+      
+      res.json(result);
+    } catch (error: any) {
+      console.error("Backup error:", error);
+      res.status(500).json({ 
+        error: error.message || "Failed to create backup",
+        details: "Please ensure AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and S3_BACKUP_BUCKET are configured"
+      });
+    }
+  });
+
   // Return the HTTP server
   return createServer(app);
 }
