@@ -167,16 +167,3 @@ export async function backupToS3(): Promise<BackupResult> {
     errors,
   };
 }
-
-// CLI execution
-if (require.main === module) {
-  backupToS3()
-    .then((result) => {
-      console.log('\nBackup Result:', JSON.stringify(result, null, 2));
-      process.exit(result.success ? 0 : 1);
-    })
-    .catch((error) => {
-      console.error('Backup failed:', error.message);
-      process.exit(1);
-    });
-}

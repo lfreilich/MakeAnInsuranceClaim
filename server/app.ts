@@ -11,6 +11,7 @@ import connectPgSimple from "connect-pg-simple";
 import { Pool } from "@neondatabase/serverless";
 
 import { registerRoutes } from "./routes";
+import { backupToS3 } from "./backup-to-s3";
 
 const PgSession = connectPgSimple(session);
 
@@ -121,5 +122,42 @@ export default async function runApp(
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Start scheduled backup every 12 hours
+    startScheduledBackups();
   });
+}
+
+// Scheduled backup configuration
+const BACKUP_INTERVAL_MS = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
+
+function startScheduledBackups() {
+  // Check if S3 backup is configured
+  if (!process.env.S3_BACKUP_BUCKET || !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+    log("Scheduled S3 backups disabled - AWS credentials not configured", "backup");
+    return;
+  }
+  
+  log(`Scheduled S3 backups enabled - running every 12 hours`, "backup");
+  
+  // Run first backup after 1 minute (to let server fully start)
+  setTimeout(async () => {
+    await runScheduledBackup();
+  }, 60 * 1000);
+  
+  // Then run every 12 hours
+  setInterval(async () => {
+    await runScheduledBackup();
+  }, BACKUP_INTERVAL_MS);
+}
+
+async function runScheduledBackup() {
+  try {
+    log("Starting scheduled S3 backup...", "backup");
+    const result = await backupToS3();
+    log(`Scheduled backup complete: ${result.tablesBackedUp} tables, ${result.filesBackedUp} files -> ${result.s3Location}`, "backup");
+  } catch (error: any) {
+    log(`Scheduled backup failed: ${error.message}`, "backup");
+    console.error("Scheduled backup error details:", error);
+  }
 }
