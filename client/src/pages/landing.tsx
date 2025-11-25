@@ -140,11 +140,18 @@ export default function LandingPage() {
       </section>
       
       {/* Protected Properties Section */}
-      <section className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
+      <section className="relative py-20 px-6 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${heroImage})` }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-slate-900/95" />
+        </div>
+        
+        <div className="relative z-10 max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Why Your Building's Insurance Is Exceptional<span className="text-primary">*</span></h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-white">Why Your Building's Insurance Is Exceptional<span className="text-blue-400">*</span></h2>
+            <p className="text-lg text-slate-300 max-w-3xl mx-auto">
               Moreland-managed buildings benefit from a premium, portfolio-grade insurance policy that includes 
               protections rarely found in standard block of flats cover. This means faster reinstatement, 
               stronger financial safety, and wider protection for every leaseholder.
@@ -152,15 +159,15 @@ export default function LandingPage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="hover-elevate">
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Home className="w-6 h-6 text-primary" />
+                  <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <Home className="w-6 h-6 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-2">30% Alternative Accommodation Cover</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-semibold mb-2 text-white">30% Alternative Accommodation Cover</h3>
+                    <p className="text-sm text-slate-300">
                       If your flat becomes uninhabitable, the policy provides significantly higher-than-standard 
                       limits to ensure you're re-housed comfortably while repairs are completed.
                     </p>
@@ -169,15 +176,15 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="hover-elevate">
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Bug className="w-6 h-6 text-primary" />
+                  <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <Bug className="w-6 h-6 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-2">Japanese Knotweed & Fly-Tipping Cover</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-semibold mb-2 text-white">Japanese Knotweed & Fly-Tipping Cover</h3>
+                    <p className="text-sm text-slate-300">
                       Unusual and highly valuable protections that most block policies exclude, keeping the 
                       estate protected from unexpected environmental issues.
                     </p>
@@ -186,15 +193,15 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="hover-elevate">
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <ShieldAlert className="w-6 h-6 text-primary" />
+                  <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <ShieldAlert className="w-6 h-6 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-2">Police Welfare Entry & Squatter Damage</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-semibold mb-2 text-white">Police Welfare Entry & Squatter Damage</h3>
+                    <p className="text-sm text-slate-300">
                       Damage caused during emergency welfare checks or unlawful occupation is included—giving 
                       residents peace of mind.
                     </p>
@@ -203,15 +210,15 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="hover-elevate">
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Droplets className="w-6 h-6 text-primary" />
+                  <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <Droplets className="w-6 h-6 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-2">Enhanced Leak Detection (Trace & Access)</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-semibold mb-2 text-white">Enhanced Leak Detection (Trace & Access)</h3>
+                    <p className="text-sm text-slate-300">
                       The policy pays for finding and fixing the source of leaks within walls and ceilings, 
                       protecting you from the most common type of flat-to-flat damage.
                     </p>
@@ -220,15 +227,15 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="hover-elevate">
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="w-6 h-6 text-primary" />
+                  <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="w-6 h-6 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-2">Day-One Rebuild Protection</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-semibold mb-2 text-white">Day-One Rebuild Protection</h3>
+                    <p className="text-sm text-slate-300">
                       Your building is protected against inflation in construction costs from day one, 
                       ensuring full reinstatement after a major event.
                     </p>
@@ -237,15 +244,15 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="hover-elevate">
+            <Card className="bg-white/10 backdrop-blur-sm border-white/20 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Users className="w-6 h-6 text-primary" />
+                  <div className="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-6 h-6 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold mb-2">Composite Insured Protection</h3>
-                    <p className="text-sm text-muted-foreground">
+                    <h3 className="font-semibold mb-2 text-white">Composite Insured Protection</h3>
+                    <p className="text-sm text-slate-300">
                       One resident's mistake won't invalidate the entire block's insurance—your cover 
                       remains safe regardless of others' actions.
                     </p>
@@ -256,15 +263,15 @@ export default function LandingPage() {
           </div>
           
           {/* Portfolio-Grade Protection - Featured Card */}
-          <Card className="mt-8 border-primary/20 bg-primary/5">
+          <Card className="mt-8 bg-blue-500/20 backdrop-blur-sm border-blue-400/30">
             <CardContent className="p-8">
               <div className="flex flex-col items-center gap-4 text-center">
-                <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-8 h-8 text-primary-foreground" />
+                <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                  <CheckCircle2 className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold mb-2">Portfolio-Grade Protection</h3>
-                  <p className="text-muted-foreground max-w-2xl">
+                  <h3 className="text-xl font-bold mb-2 text-white">Portfolio-Grade Protection</h3>
+                  <p className="text-slate-300 max-w-2xl">
                     Together, these features provide a level of cover normally reserved for institutional property 
                     portfolios—ensuring your home is safeguarded with one of the strongest residential block policies 
                     in the market.
