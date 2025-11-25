@@ -332,7 +332,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if user has access to this claim
       const user = req.session.user!;
-      const isStaff = user.role === 'staff' || user.role === 'superuser' || user.role === 'admin';
+      const roleLower = user.role?.toLowerCase();
+      const isStaff = roleLower === 'staff' || roleLower === 'superuser' || roleLower === 'admin';
       if (!isStaff && !user.claimAccess.includes(claim.id)) {
         res.status(403).json({ error: "Access denied to this claim" });
         return;
@@ -710,14 +711,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check access to this claim
       const user = req.session.user!;
-      const isStaff = user.role === 'staff' || user.role === 'superuser' || user.role === 'admin';
+      const roleLower = user.role?.toLowerCase();
+      const isStaff = roleLower === 'staff' || roleLower === 'superuser' || roleLower === 'admin';
       if (!isStaff && !user.claimAccess.includes(existingNote.claimId)) {
         res.status(403).json({ error: "Access denied to this claim" });
         return;
       }
 
       // Assessors are read-only
-      if (user.role === 'assessor') {
+      if (roleLower === 'assessor') {
         res.status(403).json({ error: "Assessors have read-only access" });
         return;
       }

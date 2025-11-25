@@ -9,11 +9,11 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 export function requireStaff(req: Request, res: Response, next: NextFunction) {
-  const role = req.session.user?.role;
+  const role = req.session.user?.role?.toLowerCase();
   const isStaff = role === 'staff' || role === 'superuser' || role === 'admin';
   
   if (!req.session.user || !isStaff) {
-    console.log(`[AUTH] Staff access denied - session role: ${role}`);
+    console.log(`[AUTH] Staff access denied - session role: ${req.session.user?.role}`);
     return res.status(403).json({ message: "Staff access required" });
   }
   next();
@@ -29,7 +29,7 @@ export async function requireClaimAccess(req: Request, res: Response, next: Next
     return res.status(400).json({ message: "Invalid claim ID" });
   }
 
-  const role = req.session.user.role;
+  const role = req.session.user.role?.toLowerCase();
   if (role === 'staff' || role === 'superuser' || role === 'admin') {
     return next();
   }
@@ -51,7 +51,7 @@ export async function requireClaimWrite(req: Request, res: Response, next: NextF
     return res.status(400).json({ message: "Invalid claim ID" });
   }
 
-  const role = req.session.user.role;
+  const role = req.session.user.role?.toLowerCase();
   const isStaff = role === 'staff' || role === 'superuser' || role === 'admin';
   
   if (isStaff || role === 'tenant') {
