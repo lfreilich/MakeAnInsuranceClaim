@@ -125,7 +125,7 @@ export default function AdminDashboard() {
 
   const backupMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/backup", {
+      const response = await fetch("/api/admin/backup", {
         method: "POST",
         credentials: "include",
       });
