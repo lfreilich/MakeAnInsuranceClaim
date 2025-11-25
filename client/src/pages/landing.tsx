@@ -166,10 +166,10 @@ export default function LandingPage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
+            <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-lg bg-blue-500/30 flex items-center justify-center flex-shrink-0">
                     <Home className="w-6 h-6 text-amber-400" />
                   </div>
                   <div>
@@ -183,10 +183,10 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
+            <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-lg bg-blue-500/30 flex items-center justify-center flex-shrink-0">
                     <Bug className="w-6 h-6 text-amber-400" />
                   </div>
                   <div>
@@ -200,10 +200,10 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
+            <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-lg bg-blue-500/30 flex items-center justify-center flex-shrink-0">
                     <ShieldAlert className="w-6 h-6 text-amber-400" />
                   </div>
                   <div>
@@ -217,10 +217,10 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
+            <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-lg bg-blue-500/30 flex items-center justify-center flex-shrink-0">
                     <Droplets className="w-6 h-6 text-amber-400" />
                   </div>
                   <div>
@@ -234,10 +234,10 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
+            <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-lg bg-blue-500/30 flex items-center justify-center flex-shrink-0">
                     <TrendingUp className="w-6 h-6 text-amber-400" />
                   </div>
                   <div>
@@ -251,10 +251,10 @@ export default function LandingPage() {
               </CardContent>
             </Card>
             
-            <Card className="bg-amber-500/10 backdrop-blur-sm border-amber-500/30 hover-elevate">
+            <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-lg bg-blue-500/30 flex items-center justify-center flex-shrink-0">
                     <Users className="w-6 h-6 text-amber-400" />
                   </div>
                   <div>
@@ -270,7 +270,7 @@ export default function LandingPage() {
           </div>
           
           {/* Portfolio-Grade Protection - Featured Card */}
-          <Card className="mt-8 bg-amber-500/20 backdrop-blur-sm border-amber-400/30">
+          <Card className="mt-8 bg-blue-500/20 backdrop-blur-sm border-blue-400/30">
             <CardContent className="p-8">
               <div className="flex flex-col items-center gap-4 text-center">
                 <div className="w-16 h-16 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0">
