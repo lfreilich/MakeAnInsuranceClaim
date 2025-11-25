@@ -1,71 +1,75 @@
-// SMS service for sending verification codes via Twilio
-import twilio from 'twilio';
-
-let connectionSettings: any;
-
-async function getCredentials() {
-  const hostname = process.env.REPLIT_CONNECTORS_HOSTNAME;
-  const xReplitToken = process.env.REPL_IDENTITY 
-    ? 'repl ' + process.env.REPL_IDENTITY 
-    : process.env.WEB_REPL_RENEWAL 
-    ? 'depl ' + process.env.WEB_REPL_RENEWAL 
-    : null;
-
-  if (!xReplitToken) {
-    throw new Error('X_REPLIT_TOKEN not found for repl/depl');
-  }
-
-  connectionSettings = await fetch(
-    'https://' + hostname + '/api/v2/connection?include_secrets=true&connector_names=twilio',
-    {
-      headers: {
-        'Accept': 'application/json',
-        'X_REPLIT_TOKEN': xReplitToken
-      }
-    }
-  ).then(res => res.json()).then(data => data.items?.[0]);
-
-  if (!connectionSettings || (!connectionSettings.settings.account_sid || !connectionSettings.settings.api_key || !connectionSettings.settings.api_key_secret)) {
-    throw new Error('Twilio not connected');
-  }
-  return {
-    accountSid: connectionSettings.settings.account_sid,
-    apiKey: connectionSettings.settings.api_key,
-    apiKeySecret: connectionSettings.settings.api_key_secret,
-    phoneNumber: connectionSettings.settings.phone_number
-  };
-}
-
-async function getTwilioClient() {
-  const { accountSid, apiKey, apiKeySecret } = await getCredentials();
-  return twilio(apiKey, apiKeySecret, {
-    accountSid: accountSid
-  });
-}
-
-async function getTwilioFromPhoneNumber() {
-  const { phoneNumber } = await getCredentials();
-  return phoneNumber;
-}
+// SMS service for sending verification codes via Intellisms
+// Using Intellisms HTTP API: https://www.intellisms.co.uk/sms-gateway/http-interface/
 
 export async function sendVerificationCodeSMS(toPhone: string, code: string): Promise<void> {
+  const username = process.env.INTELLISMS_USERNAME;
+  const password = process.env.INTELLISMS_PASSWORD;
+  const senderId = process.env.INTELLISMS_SENDER_ID || 'Moreland';
+
+  if (!username || !password) {
+    throw new Error('Intellisms credentials not configured');
+  }
+
+  // Format phone number - remove any non-digit characters except leading +
+  let formattedPhone = toPhone.replace(/[^\d+]/g, '');
+  // If starts with +, remove it (Intellisms expects numbers without +)
+  if (formattedPhone.startsWith('+')) {
+    formattedPhone = formattedPhone.substring(1);
+  }
+  // If starts with 0, replace with 44 for UK
+  if (formattedPhone.startsWith('0')) {
+    formattedPhone = '44' + formattedPhone.substring(1);
+  }
+
+  const message = `Your Moreland Claims Portal verification code is: ${code}. This code expires in 10 minutes.`;
+
   try {
-    const client = await getTwilioClient();
-    const fromPhone = await getTwilioFromPhoneNumber();
-
-    if (!fromPhone) {
-      throw new Error('Twilio phone number not configured');
-    }
-
-    await client.messages.create({
-      body: `Your Moreland Claims Portal verification code is: ${code}. This code expires in 10 minutes.`,
-      from: fromPhone,
-      to: toPhone
+    // Using Form Post method for Intellisms
+    const params = new URLSearchParams({
+      username: username,
+      password: password,
+      to: formattedPhone,
+      from: senderId,
+      text: message,
     });
 
-    console.log(`Verification SMS sent to ${toPhone}`);
+    const response = await fetch('https://www.intellisoftware.co.uk/smsgateway/sendmsg.aspx', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: params.toString(),
+    });
+
+    const responseText = await response.text();
+    console.log(`Intellisms response: ${responseText}`);
+
+    // Check for error responses
+    // Intellisms returns "ID:<message_id>" on success or "ERR:<error_code>" on failure
+    if (responseText.startsWith('ERR:')) {
+      const errorCode = responseText.substring(4);
+      throw new Error(`Intellisms error: ${getIntellismsErrorMessage(errorCode)}`);
+    }
+
+    console.log(`Verification SMS sent to ${formattedPhone} via Intellisms`);
   } catch (error) {
     console.error("SMS sending failed:", error);
     throw error;
   }
+}
+
+function getIntellismsErrorMessage(errorCode: string): string {
+  const errorMessages: Record<string, string> = {
+    '1': 'No username specified',
+    '2': 'No password specified',
+    '3': 'No destination specified', 
+    '4': 'No message specified',
+    '5': 'Too many recipients',
+    '6': 'Invalid username or password',
+    '7': 'Insufficient credits',
+    '8': 'Gateway error',
+    '9': 'Invalid schedule date',
+    '10': 'Internal error',
+  };
+  return errorMessages[errorCode] || `Unknown error (${errorCode})`;
 }

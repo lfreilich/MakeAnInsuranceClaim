@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { ObjectStorageService } from "./objectStorage";
 import { enhanceIncidentDescription } from "./openai";
 import { sendClaimConfirmationEmail, sendVerificationCodeEmail } from "./email";
+import { sendVerificationCodeSMS } from "./sms";
 import { 
   insertClaimSchema, 
   type InsertClaim,
@@ -110,18 +111,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication: Request verification code
   app.post("/api/auth/request-code", async (req: Request, res: Response) => {
     try {
-      const { email, claimId } = requestCodeSchema.parse(req.body);
+      const { email, claimId, deliveryMethod } = req.body;
+      
+      // Validate email
+      if (!email || typeof email !== 'string') {
+        res.status(400).json({ error: "Email is required" });
+        return;
+      }
+      
+      const normalizedEmail = email.toLowerCase().trim();
       
       // Generate verification code
-      const { code, expiresAt } = await storage.createVerificationCode(email, claimId);
+      const { code, expiresAt } = await storage.createVerificationCode(normalizedEmail, claimId);
       
-      // Send verification code via email
-      await sendVerificationCodeEmail(email, code);
-      
-      res.status(200).json({ 
-        message: "Verification code sent to your email",
-        expiresAt,
-      });
+      // Send verification code via chosen method
+      if (deliveryMethod === 'sms') {
+        // Get user's phone number
+        const user = await storage.getUserByEmail(normalizedEmail);
+        if (!user?.phone) {
+          res.status(400).json({ error: "No phone number registered for this account" });
+          return;
+        }
+        
+        try {
+          await sendVerificationCodeSMS(user.phone, code);
+          res.status(200).json({ 
+            message: "Verification code sent to your phone",
+            deliveryMethod: 'sms',
+            expiresAt,
+          });
+        } catch (smsError: any) {
+          console.error("SMS sending failed, falling back to email:", smsError);
+          // Fallback to email if SMS fails
+          await sendVerificationCodeEmail(normalizedEmail, code);
+          res.status(200).json({ 
+            message: "SMS failed, verification code sent to your email instead",
+            deliveryMethod: 'email',
+            expiresAt,
+          });
+        }
+      } else {
+        // Default to email
+        await sendVerificationCodeEmail(normalizedEmail, code);
+        res.status(200).json({ 
+          message: "Verification code sent to your email",
+          deliveryMethod: 'email',
+          expiresAt,
+        });
+      }
     } catch (error: any) {
       console.error("Request code error:", error);
       if (error instanceof z.ZodError) {
