@@ -59,6 +59,13 @@ export async function requireClaimWrite(req: Request, res: Response, next: NextF
 export async function determineUserRole(email: string): Promise<{ role: 'staff' | 'tenant' | 'assessor' | 'none', claimAccess: number[] }> {
   const normalizedEmail = email.toLowerCase().trim();
 
+  // Check if user has staff/superuser role in database
+  const dbUser = await storage.getUserByEmail(normalizedEmail);
+  if (dbUser && (dbUser.role === 'staff' || dbUser.role === 'superuser' || dbUser.role === 'admin')) {
+    return { role: 'staff', claimAccess: [] };
+  }
+
+  // Check staff domains
   const staffDomains = ['@mnninsure.com', '@morelandestate.co.uk'];
   const isStaff = staffDomains.some(domain => normalizedEmail.endsWith(domain));
 
