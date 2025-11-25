@@ -111,8 +111,8 @@ export default function LandingPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
-              <CardContent className="p-8">
-                <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center text-2xl font-bold mb-4">
+              <CardContent className="p-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center text-2xl font-bold mb-4 mx-auto">
                   1
                 </div>
                 <h3 className="text-xl font-semibold mb-3 text-amber-400">Enter Your Details</h3>
@@ -124,8 +124,8 @@ export default function LandingPage() {
             </Card>
             
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
-              <CardContent className="p-8">
-                <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center text-2xl font-bold mb-4">
+              <CardContent className="p-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center text-2xl font-bold mb-4 mx-auto">
                   2
                 </div>
                 <h3 className="text-xl font-semibold mb-3 text-amber-400">Document the Incident</h3>
@@ -137,8 +137,8 @@ export default function LandingPage() {
             </Card>
             
             <Card className="bg-blue-500/20 backdrop-blur-sm border-blue-500/30 hover-elevate">
-              <CardContent className="p-8">
-                <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center text-2xl font-bold mb-4">
+              <CardContent className="p-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-amber-500 text-slate-900 flex items-center justify-center text-2xl font-bold mb-4 mx-auto">
                   3
                 </div>
                 <h3 className="text-xl font-semibold mb-3 text-amber-400">Submit & Track</h3>
