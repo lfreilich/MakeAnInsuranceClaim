@@ -1,0 +1,99 @@
+
+Unexpected error happened 😕
+fa6ef443001d4f0cbfa14975ac382e80
+
+We're already looking into it! Feel free to reach out to our support team, make sure to copy error ID
+Invalid response from Replit driver
+INSERT INTO
+  users (email, name, role, phone, has_logged_in, active)
+VALUES
+  (
+    'lf@ground-rent.com',
+    'LF',
+    'superuser',
+    '+447539355690',
+    true,
+    true
+  ),
+  (
+    'lf@morelandestate.co.uk',
+    'lf',
+    'staff',
+    '447999888777',
+    true,
+    true
+  )
+ON CONFLICT (email) DO UPDATE
+SET role = EXCLUDED.role,
+phone = EXCLUDED.phone,
+has_logged_in = EXCLUDED.has_logged_in;
+
+INSERT INTO
+  loss_assessors (company_name, contact_name, email, phone, active)
+VALUES
+  (
+    'Test Loss Assessors Ltd',
+    'John Smith',
+    'test@assessors.com',
+    '020 1234 5678',
+    true
+  )
+ON CONFLICT DO NOTHING;
+
+INSERT INTO
+  claims (
+    reference_number,
+    status,
+    claimant_name,
+    claimant_email,
+    claimant_phone,
+    property_address,
+    incident_date,
+    incident_type,
+    incident_description,
+    has_building_damage,
+    has_theft,
+    theft_police_reported,
+    signature_type,
+    signature_data,
+    declaration_accepted,
+    fraud_warning_accepted,
+    contents_exclusion_accepted,
+    is_investment_property,
+    current_stage,
+    submitted_at,
+    late_notification_acknowledged
+  )
+VALUES
+  (
+    'TEST-PROD-001',
+    'submitted',
+    'Production Test',
+    'test@example.com',
+    '07700900000',
+    '123 Production St',
+    '2024-01-15',
+    'water_damage',
+    'Test claim for production',
+    false,
+    false,
+    false,
+    'typed',
+    'TestSig',
+    true,
+    true,
+    false,
+    false,
+    'new',
+    NOW(),
+    false
+  )
+ON CONFLICT (reference_number) DO NOTHING;
+{
+  "sql": "INSERT INTO users (email, name, role, phone, has_logged_in, active) VALUES\n('lf@ground-rent.com', 'LF', 'superuser', '+447539355690', true, true),\n('lf@morelandestate.co.uk', 'lf', 'staff', '447999888777', true, true)\nON CONFLICT (email) DO UPDATE SET role = EXCLUDED.role, phone = EXCLUDED.phone, has_logged_in = EXCLUDED.has_logged_in;\n\nINSERT INTO loss_assessors (company_name, contact_name, email, phone, active) VALUES\n('Test Loss Assessors Ltd', 'John Smith', 'test@assessors.com', '020 1234 5678', true)\nON CONFLICT DO NOTHING;\n\nINSERT INTO claims (reference_number, status, claimant_name, claimant_email, claimant_phone, property_address, incident_date, incident_type, incident_description, has_building_damage, has_theft, theft_police_reported, signature_type, signature_data, declaration_accepted, fraud_warning_accepted, contents_exclusion_accepted, is_investment_property, current_stage, submitted_at, late_notification_acknowledged) VALUES\n('TEST-PROD-001', 'submitted', 'Production Test', 'test@example.com', '07700900000', '123 Production St', '2024-01-15', 'water_damage', 'Test claim for production', false, false, false, 'typed', 'TestSig', true, true, false, false, 'new', NOW(), false)\nON CONFLICT (reference_number) DO NOTHING;"
+}
+[
+  "[Object]",
+  "[Object]",
+  "[Object]"
+]
