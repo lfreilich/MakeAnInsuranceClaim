@@ -16,7 +16,7 @@ import { useState, useEffect } from "react";
 import { AIWritingAssistant } from "../AIWritingAssistant";
 
 interface LateNotificationAuditEntry {
-  action: 'acknowledged' | 'date_changed' | 'back_clicked';
+  action: 'warning_displayed' | 'date_changed' | 'back_clicked';
   timestamp: string;
   details?: {
     previousDate?: string;
@@ -57,6 +57,15 @@ export function Step3IncidentDetails({ defaultValues, onNext, onBack }: Step3Inc
 
   useEffect(() => {
     if (!isWithin60Days && incidentDate && !lateNotificationAcknowledged) {
+      const auditEntry: LateNotificationAuditEntry = {
+        action: 'warning_displayed',
+        timestamp: new Date().toISOString(),
+        details: {
+          newDate: incidentDate.toISOString(),
+          daysSinceIncident,
+        },
+      };
+      setLateNotificationAuditLog(prev => [...prev, auditEntry]);
       setShowLateNotificationWarning(true);
     }
   }, [incidentDate, isWithin60Days, lateNotificationAcknowledged]);
@@ -87,15 +96,6 @@ export function Step3IncidentDetails({ defaultValues, onNext, onBack }: Step3Inc
   }, [incidentDate, lateNotificationAcknowledged, acknowledgedDate, daysSinceIncident, isWithin60Days]);
 
   const handleAcknowledgeLateNotification = () => {
-    const auditEntry: LateNotificationAuditEntry = {
-      action: 'acknowledged',
-      timestamp: new Date().toISOString(),
-      details: {
-        newDate: incidentDate.toISOString(),
-        daysSinceIncident,
-      },
-    };
-    setLateNotificationAuditLog(prev => [...prev, auditEntry]);
     setLateNotificationAcknowledged(true);
     setAcknowledgedDate(incidentDate);
     setShowLateNotificationWarning(false);

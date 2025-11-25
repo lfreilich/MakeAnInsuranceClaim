@@ -24,7 +24,7 @@ const TOTAL_STEPS = 8;
 interface LateNotificationData {
   acknowledged: boolean;
   auditLog: Array<{
-    action: 'acknowledged' | 'date_changed' | 'back_clicked';
+    action: 'warning_displayed' | 'date_changed' | 'back_clicked';
     timestamp: string;
     details?: {
       previousDate?: string;
