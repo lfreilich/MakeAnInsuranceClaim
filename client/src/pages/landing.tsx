@@ -202,7 +202,7 @@ export default function LandingPage() {
                   <div>
                     <h3 className="font-semibold mb-2 text-white">Police Welfare Entry & Squatter Damage</h3>
                     <p className="text-sm text-slate-300">
-                      Damage caused during emergency welfare checks or unlawful occupation is included—giving 
+                      Damage caused during emergency welfare checks or unlawful occupation is included, giving 
                       residents peace of mind.
                     </p>
                   </div>
@@ -253,7 +253,7 @@ export default function LandingPage() {
                   <div>
                     <h3 className="font-semibold mb-2 text-white">Composite Insured Protection</h3>
                     <p className="text-sm text-slate-300">
-                      One resident's mistake won't invalidate the entire block's insurance—your cover 
+                      One resident's mistake won't invalidate the entire block's insurance. Your cover 
                       remains safe regardless of others' actions.
                     </p>
                   </div>
@@ -273,7 +273,7 @@ export default function LandingPage() {
                   <h3 className="text-xl font-bold mb-2 text-white">Portfolio-Grade Protection</h3>
                   <p className="text-slate-300 max-w-2xl">
                     Together, these features provide a level of cover normally reserved for institutional property 
-                    portfolios—ensuring your home is safeguarded with one of the strongest residential block policies 
+                    portfolios, ensuring your home is safeguarded with one of the strongest residential block policies 
                     in the market.
                   </p>
                 </div>
