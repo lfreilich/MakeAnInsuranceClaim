@@ -1233,10 +1233,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await backupToS3();
       
       // Log the backup action
-      const userId = req.session?.user?.email;
-      if (userId) {
+      const userEmail = req.session?.user?.email;
+      if (userEmail) {
         await storage.createAuditLog({
-          userId: null,
           claimId: null,
           action: 'backup_created',
           entityType: 'system',
@@ -1246,9 +1245,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             tablesBackedUp: result.tablesBackedUp,
             filesBackedUp: result.filesBackedUp,
             s3Location: result.s3Location,
-            triggeredBy: userId,
+            triggeredBy: userEmail,
           },
-        });
+        } as any);
       }
       
       res.json(result);
