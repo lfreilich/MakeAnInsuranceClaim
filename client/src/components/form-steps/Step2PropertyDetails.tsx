@@ -28,6 +28,18 @@ interface ConstructionDetails {
   construction_type?: string;
 }
 
+interface AddressComponent {
+  long_name: string;
+  short_name: string;
+  types: string[];
+}
+
+// Helper to extract address component by type
+function getAddressComponent(components: AddressComponent[], type: string): string | undefined {
+  const component = components.find(c => c.types.includes(type));
+  return component?.long_name;
+}
+
 export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2PropertyDetailsProps) {
   const [addressSearch, setAddressSearch] = useState("");
   const [addressPredictions, setAddressPredictions] = useState<AddressPrediction[]>([]);
@@ -80,10 +92,27 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
       if (detailsResponse.ok) {
         const detailsData = await detailsResponse.json();
         const formattedAddress = detailsData.result?.formatted_address || prediction.description;
+        const addressComponents: AddressComponent[] = detailsData.result?.address_components || [];
         
         form.setValue("propertyAddress", formattedAddress);
         form.setValue("propertyPlaceId", prediction.place_id);
         setHasSelectedAddress(true);
+        
+        // Extract apartment/block information from address components
+        // subpremise = apartment, suite, unit, floor number
+        // premise = building name or number (common for apartment buildings)
+        const subpremise = getAddressComponent(addressComponents, 'subpremise');
+        const premise = getAddressComponent(addressComponents, 'premise');
+        
+        // Build the block/unit string from available components
+        const blockParts: string[] = [];
+        if (premise) blockParts.push(premise);
+        if (subpremise) blockParts.push(subpremise);
+        
+        if (blockParts.length > 0) {
+          const blockValue = blockParts.join(', ');
+          form.setValue("propertyBlock", blockValue);
+        }
         
         // Now fetch construction details from Chimnie
         setIsLoadingConstruction(true);
@@ -231,6 +260,7 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
                         onClick={() => {
                           form.setValue("propertyAddress", "");
                           form.setValue("propertyPlaceId", "");
+                          form.setValue("propertyBlock", "");
                           setHasSelectedAddress(false);
                           setConstructionDetails(null);
                         }}
@@ -248,6 +278,32 @@ export function Step2PropertyDetails({ defaultValues, onNext, onBack }: Step2Pro
               </FormItem>
             )}
           />
+
+          {hasSelectedAddress && (
+            <FormField
+              control={form.control}
+              name="propertyBlock"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Block / Apartment / Unit Number</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="e.g., Block A, Flat 12, Unit 3B"
+                      {...field}
+                      data-testid="input-property-block"
+                    />
+                  </FormControl>
+                  <FormDescription className="text-xs">
+                    {field.value 
+                      ? "Auto-detected from address. Edit if needed."
+                      : "If applicable, enter your block, apartment, or unit number"
+                    }
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           {isLoadingConstruction && (
             <Alert className="bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800">
