@@ -208,6 +208,37 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async getOrCreateUser(email: string): Promise<User> {
+    // Check if user exists
+    const existingUser = await this.getUserByEmail(email);
+    if (existingUser) {
+      return existingUser;
+    }
+    
+    // Determine role from email domain
+    const isStaff = email.endsWith('@mnninsure.com') || email.endsWith('@morelandestate.co.uk');
+    const role = isStaff ? 'staff' : 'tenant';
+    
+    // Create new user
+    const [user] = await db.insert(users).values({
+      email,
+      name: email.split('@')[0],
+      role,
+      active: true,
+    } as any).returning();
+    
+    return user;
+  }
+
+  async updateUserPhone(email: string, phone: string): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ phone })
+      .where(eq(users.email, email))
+      .returning();
+    return updatedUser || undefined;
+  }
+
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).where(eq(users.active, true));
   }

@@ -10,6 +10,7 @@ export const users = pgTable("users", {
   replitUserId: varchar("replit_user_id", { length: 255 }).unique(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
+  phone: varchar("phone", { length: 20 }),
   role: varchar("role", { length: 50 }).notNull().default("admin"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),

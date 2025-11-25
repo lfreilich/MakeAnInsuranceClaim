@@ -22,6 +22,85 @@ import {
 const objectStorageService = new ObjectStorageService();
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Authentication: Check user and determine auth flow
+  app.post("/api/auth/check-user", async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      if (!email || typeof email !== 'string') {
+        res.status(400).json({ error: "Email is required" });
+        return;
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      // Check if staff domain
+      const isStaff = normalizedEmail.endsWith('@mnninsure.com') || 
+                      normalizedEmail.endsWith('@morelandestate.co.uk');
+      
+      // Get or create user for staff
+      if (isStaff) {
+        const user = await storage.getOrCreateUser(normalizedEmail);
+        const hasPhone = !!user.phone;
+        
+        res.status(200).json({
+          hasPhone,
+          requiresPhoneRegistration: !hasPhone,
+        });
+      } else {
+        // Non-staff users don't need phone registration
+        res.status(200).json({
+          hasPhone: false,
+          requiresPhoneRegistration: false,
+        });
+      }
+    } catch (error: any) {
+      console.error("Check user error:", error);
+      res.status(500).json({ error: "Failed to check user" });
+    }
+  });
+
+  // Authentication: Register phone number for staff
+  app.post("/api/auth/register-phone", async (req: Request, res: Response) => {
+    try {
+      const { email, phone } = req.body;
+      if (!email || !phone) {
+        res.status(400).json({ error: "Email and phone are required" });
+        return;
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      // Validate phone number (basic validation - at least 10 digits)
+      const cleanPhone = phone.replace(/\D/g, '');
+      if (cleanPhone.length < 10) {
+        res.status(400).json({ error: "Phone number must have at least 10 digits" });
+        return;
+      }
+
+      // Normalize UK numbers to international format
+      let normalizedPhone = cleanPhone;
+      if (cleanPhone.startsWith('0') && cleanPhone.length === 11) {
+        normalizedPhone = '44' + cleanPhone.substring(1);
+      }
+
+      // Update user's phone
+      const updatedUser = await storage.updateUserPhone(normalizedEmail, normalizedPhone);
+      
+      if (!updatedUser) {
+        res.status(404).json({ error: "User not found" });
+        return;
+      }
+
+      res.status(200).json({ 
+        message: "Phone registered successfully",
+        hasPhone: true,
+      });
+    } catch (error: any) {
+      console.error("Register phone error:", error);
+      res.status(500).json({ error: "Failed to register phone" });
+    }
+  });
+
   // Authentication: Request verification code
   app.post("/api/auth/request-code", async (req: Request, res: Response) => {
     try {
