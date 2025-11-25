@@ -1,0 +1,35 @@
+
+> rest-express@1.0.0 dev
+5:31:36 AM [express] serving on port 5000ev.ts
+5:31:36 AM [backup] Scheduled S3 backups enabled - running every 12 hours
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+5:32:36 AM [backup] Starting scheduled S3 backup...
+Starting backup to S3 bucket: logaclaim
+Backup prefix: moreland-backup-2025-11-25T05-32-36-153Z
+Backing up table: claims
+  - Backed up 11 records from claims
+Backing up table: users
+  - Backed up 6 records from users
+Backing up table: insurance_policies
+  - Backed up 0 records from insurance_policies
+Backing up table: loss_assessors
+  - Backed up 2 records from loss_assessors
+Backing up table: audit_logs
+  - Backed up 4 records from audit_logs
+Backing up table: claim_notes
+  - Backed up 1 records from claim_notes
+Backing up table: payments
+  - Backed up 1 records from payments
+Backing up table: verification_codes
+  - Backed up 11 records from verification_codes
+Backing up table: claim_status_transitions
+  - Backed up 1 records from claim_status_transitions
+Backing up uploaded files from object storage...
+Failed to backup files: Could not refresh access token: request to http://169.254.169.254/computeMetadata/v1/instance/service-accounts/default/token?scopes=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fiam%2Chttps%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcloud-platform%2Chttps%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdevstorage.full_control failed, reason: connect ECONNREFUSED 169.254.169.254:80
+
+Backup complete!
+  Tables backed up: 9
+  Files backed up: 0
+  Errors: 1
+5:32:43 AM [backup] Scheduled backup complete: claims,users,insurance_policies,loss_assessors,audit_logs,claim_notes,payments,verification_codes,claim_status_transitions tables, 0 files -> s3://logaclaim/moreland-backup-2025-11-25T05-32-36-153Z/
