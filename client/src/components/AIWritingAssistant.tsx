@@ -34,7 +34,8 @@ export function AIWritingAssistant({ open, onOpenChange, originalText, onAccept 
       const response = await apiRequest("POST", "/api/ai/enhance-description", {
         text: originalText
       });
-      setEnhancedText(response.enhancedText);
+      const data = await response.json();
+      setEnhancedText(data.enhancedText);
     } catch (err: any) {
       setError(err.message || "Failed to enhance text. Please try again.");
       console.error("AI enhancement error:", err);
