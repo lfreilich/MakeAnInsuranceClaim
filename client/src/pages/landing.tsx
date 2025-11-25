@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Shield, Clock, FileCheck, Building2, Mail, Phone, AlertCircle, LogIn } from "lucide-react";
+import { Shield, Clock, FileCheck, Building2, Mail, Phone, AlertCircle, LogIn, Home, Bug, ShieldAlert, Droplets, TrendingUp, Users, Scale, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import heroImage from "@assets/generated_images/luxury_apartment_building_hero.png";
@@ -141,22 +141,150 @@ export default function LandingPage() {
       
       {/* Protected Properties Section */}
       <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto">
-          <Card className="overflow-hidden">
-            <div className="flex flex-col md:flex-row">
-              <div className="bg-primary p-12 flex items-center justify-center md:w-1/3">
-                <Building2 className="w-24 h-24 text-primary-foreground" />
-              </div>
-              <CardContent className="p-8 md:w-2/3 flex flex-col justify-center">
-                <h3 className="text-2xl font-bold mb-4">Protected Properties</h3>
-                <p className="text-lg mb-4 font-semibold">Comprehensive buildings insurance</p>
-                <p className="text-muted-foreground">
-                  All Moreland-managed properties are covered under our premium buildings insurance policy, 
-                  ensuring fast and fair claim settlements.
-                </p>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-4">Why Your Building's Insurance Is Exceptional</h2>
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+              Moreland-managed buildings benefit from a premium, portfolio-grade insurance policy that includes 
+              protections rarely found in standard block of flats cover. This means faster reinstatement, 
+              stronger financial safety, and wider protection for every leaseholder.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="hover-elevate">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Home className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-2">30% Alternative Accommodation Cover</h3>
+                    <p className="text-sm text-muted-foreground">
+                      If your flat becomes uninhabitable, the policy provides significantly higher-than-standard 
+                      limits to ensure you're re-housed comfortably while repairs are completed.
+                    </p>
+                  </div>
+                </div>
               </CardContent>
-            </div>
+            </Card>
+            
+            <Card className="hover-elevate">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Bug className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-2">Japanese Knotweed & Fly-Tipping Cover</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Unusual and highly valuable protections that most block policies exclude, keeping the 
+                      estate protected from unexpected environmental issues.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover-elevate">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <ShieldAlert className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-2">Police Welfare Entry & Squatter Damage</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Damage caused during emergency welfare checks or unlawful occupation is included—giving 
+                      residents peace of mind.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover-elevate">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Droplets className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-2">Enhanced Leak Detection (Trace & Access)</h3>
+                    <p className="text-sm text-muted-foreground">
+                      The policy pays for finding and fixing the source of leaks within walls and ceilings, 
+                      protecting you from the most common type of flat-to-flat damage.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover-elevate">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-2">Day-One Rebuild Protection</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Your building is protected against inflation in construction costs from day one, 
+                      ensuring full reinstatement after a major event.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card className="hover-elevate">
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold mb-2">Composite Insured Protection</h3>
+                    <p className="text-sm text-muted-foreground">
+                      One resident's mistake won't invalidate the entire block's insurance—your cover 
+                      remains safe regardless of others' actions.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          {/* High Liability - Featured Card */}
+          <Card className="mt-8 border-primary/20 bg-primary/5">
+            <CardContent className="p-8">
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                  <Scale className="w-8 h-8 text-primary-foreground" />
+                </div>
+                <div className="text-center md:text-left">
+                  <h3 className="text-xl font-bold mb-2">£10 Million Property Owners' Liability</h3>
+                  <p className="text-muted-foreground">
+                    High liability protection ensures the block is compliant with lender and legal requirements, 
+                    providing comprehensive coverage for property owners.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
           </Card>
+          
+          {/* Closing Statement */}
+          <div className="mt-12 text-center">
+            <div className="inline-flex items-center gap-2 text-primary mb-4">
+              <CheckCircle2 className="w-5 h-5" />
+              <span className="font-semibold">Portfolio-Grade Protection</span>
+            </div>
+            <p className="text-muted-foreground max-w-3xl mx-auto">
+              Together, these features provide a level of cover normally reserved for institutional property 
+              portfolios—ensuring your home is safeguarded with one of the strongest residential block policies 
+              in the market.
+            </p>
+          </div>
         </div>
       </section>
       
