@@ -146,11 +146,11 @@ export default function ClaimSuccess() {
               <div>
                 <p className="font-semibold mb-2">24/7 Emergency Line</p>
                 <a
-                  href="tel:+442079461234"
+                  href="tel:+442070434260"
                   className="text-sm text-primary hover:underline"
                   data-testid="link-contact-phone"
                 >
-                  020 7946 1234
+                  020 7043 4260
                 </a>
               </div>
             </CardContent>
