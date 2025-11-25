@@ -25,11 +25,11 @@ export default function LandingPage() {
             data-testid="logo-hero"
           />
           
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-6 max-w-4xl">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-amber-400 mb-6 max-w-4xl">
             Submit Your Buildings Insurance Claim Online
           </h1>
           
-          <p className="text-lg sm:text-xl text-slate-200 mb-8 max-w-2xl">
+          <p className="text-lg sm:text-xl text-amber-200 mb-8 max-w-2xl">
             Moreland Estate Management facilitates buildings insurance claims for leaseholders. 
             We streamline communication between you and the insurer's claims team - making the process faster and easier for everyone.
           </p>
